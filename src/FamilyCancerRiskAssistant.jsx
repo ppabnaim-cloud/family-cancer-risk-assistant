@@ -18,9 +18,14 @@ import React, { useState, useMemo } from "react";
  *    NOT a MaHTAS/MOH CPG — carries both a source and a scope-narrowing flag.
  *  - Cervical recommendations are taken from CPG Management of Cervical Cancer
  *    (2nd Ed., 2015), Sections 3-5 — also scope-narrowed (no screening/vaccine).
- *  - Nasopharyngeal (NPC) has NO Malaysian CPG supplied to this prototype. It
- *    follows the fail-safe rule: values are shown as provisional and clearly
- *    flagged "confirm against current guideline".
+ *  - Nasopharyngeal (NPC) is anchored to CPG Management of Nasopharyngeal
+ *    Carcinoma (2016), MaHTAS/MOH, MOH/P/PAK/326.16(GU) — a genuine KKM CPG
+ *    (developed with MSO-HNS and Academy of Medicine Malaysia), so NO society-
+ *    consensus caveat. Scope-narrowed: the CPG explicitly does NOT recommend
+ *    population screening (§2.3 — EBV serology and nasoendoscopy judged to have
+ *    insufficient evidence), so guidance is symptom-triggered referral, not a
+ *    screening schedule. Referral timeframe is "as soon as possible" (consensus,
+ *    Rec 1), not a fixed week-count. NPC stays level:"info" (no risk tier).
  *
  * Data handling: session-only. No name / IC / phone / contact is ever collected
  * (PDPA-minimised). Nothing is stored or transmitted.
@@ -166,8 +171,8 @@ const WARNING = {
     "Pendarahan selepas seks, pendarahan antara haid atau selepas putus haid, lelehan faraj luar biasa atau berterusan, atau sakit bawah perut yang berpanjangan."
   ),
   npc: L(
-    "A painless lump in the neck (often the first sign), blood-stained mucus from the nose or nosebleeds, a blocked nose or ear on one side, or hearing loss / ringing in one ear.",
-    "Ketulan di leher yang tidak sakit (selalu tanda pertama), hingus berdarah atau mimisan, hidung atau telinga tersumbat sebelah, atau hilang pendengaran / berdengung sebelah."
+    "A painless lump in the neck (often the first sign), blood-stained mucus from the nose or nosebleeds, a blocked nose or ear on one side, or hearing loss / ringing in one ear. As the cancer grows it can also cause a lasting one-sided headache, numbness of the face, or double vision.",
+    "Ketulan di leher yang tidak sakit (selalu tanda pertama), hingus berdarah atau mimisan, hidung atau telinga tersumbat sebelah, atau hilang pendengaran / berdengung sebelah. Apabila kanser membesar ia juga boleh menyebabkan sakit kepala sebelah yang berpanjangan, kebas muka, atau penglihatan berganda."
   ),
 };
 
@@ -232,9 +237,10 @@ const FLAG_CERV = L(
   "ℹ️ The risk factors, warning signs and referral advice here are anchored to the Malaysian CPG Management of Cervical Cancer (2nd Ed., 2015). That guideline covers diagnosis and treatment — it does not set screening intervals or vaccine policy. The screening schedule and HPV vaccine details below come from Malaysia's national programme, not this CPG, and should be confirmed with your clinic.",
   "ℹ️ Faktor risiko, tanda amaran dan nasihat rujukan di sini berpaut pada CPG Pengurusan Kanser Serviks Malaysia (Edisi ke-2, 2015). Garis panduan itu meliputi diagnosis dan rawatan — ia tidak menetapkan selang saringan atau dasar vaksin. Jadual saringan dan maklumat vaksin HPV di bawah datang daripada program kebangsaan Malaysia, bukan CPG ini, dan perlu disahkan dengan klinik anda."
 );
+const SOURCE_NPC = "CPG Management of Nasopharyngeal Carcinoma (2016), MaHTAS/MOH · MOH/P/PAK/326.16(GU) — §2.2 (risk factors), §2.3 (screening), §3 / Recommendation 1 (clinical presentation & referral), §4 / Recommendation 2 (investigations)";
 const FLAG_NPC = L(
-  "⚠ No Malaysian CPG was retrieved for nasopharyngeal cancer in this prototype. NPC has no routine age-based screening; the note below is risk- and symptom-driven and must be confirmed against the current guideline.",
-  "⚠ Tiada CPG Malaysia untuk kanser nasofarinks dalam prototaip ini. NPC tiada saringan mengikut umur; nota di bawah berdasarkan risiko dan simptom, dan perlu disahkan dengan garis panduan semasa."
+  "ℹ️ The risk factors, warning signs and referral advice here are anchored to the Malaysian CPG Management of Nasopharyngeal Carcinoma (2016). That guideline covers diagnosis, staging, treatment and follow-up — it does NOT recommend a population screening programme: it reviewed EBV blood tests and nasal-camera screening and found insufficient evidence to screen people who have no symptoms (§2.3). So the guidance below is about acting early on warning signs and family history, not a routine screening schedule. The guideline asks for referral to an ENT specialist \"as soon as possible\" rather than a fixed time limit.",
+  "ℹ️ Faktor risiko, tanda amaran dan nasihat rujukan di sini berpaut pada CPG Pengurusan Karsinoma Nasofarinks Malaysia (2016). Garis panduan itu meliputi diagnosis, pementasan, rawatan dan susulan — ia TIDAK mengesyorkan program saringan populasi: ia menilai ujian darah EBV dan saringan kamera hidung dan mendapati bukti tidak mencukupi untuk menyaring orang yang tiada simptom (§2.3). Jadi panduan di bawah adalah tentang bertindak awal pada tanda amaran dan sejarah keluarga, bukan jadual saringan rutin. Garis panduan meminta rujukan kepada pakar ENT \"secepat mungkin\" dan bukan had masa yang tetap."
 );
 
 /* ------------------------------------------------------------------ */
@@ -580,15 +586,30 @@ function buildCervical(profile) {
 function buildNPC(profile, relatives) {
   const npcFdr = relCancer(relatives, "npc").filter((r) => r.degree === 1).length >= 1;
   const steps = [
-    P("🩺", L("See a doctor?", "Jumpa doktor?"), L("There is no routine age-based screening for this cancer. See an ENT doctor if you have the warning signs below — especially a neck lump.", "Tiada saringan mengikut umur untuk kanser ini. Jumpa doktor ENT jika ada tanda amaran di bawah — terutama ketulan leher.")),
-    P("🔬", L("Which test", "Ujian mana"), L("An ENT doctor uses a thin camera through the nose (nasoendoscopy). A blood test for the EBV virus may be used where the guideline advises it.", "Doktor ENT guna kamera halus melalui hidung (nasoendoskopi). Ujian darah virus EBV mungkin digunakan mengikut garis panduan.")),
+    P("🩺", L("See a doctor?", "Jumpa doktor?"), L(
+      "There is no routine screening for this cancer — Malaysia's guideline reviewed screening people with no symptoms and found the evidence too weak to recommend it. What matters is acting fast on the warning signs below: the guideline says anyone who has them should be referred to an ENT (ear, nose & throat) specialist as soon as possible, because NPC is often found late.",
+      "Tiada saringan rutin untuk kanser ini — garis panduan Malaysia menilai saringan orang tanpa simptom dan mendapati buktinya terlalu lemah untuk disyorkan. Yang penting ialah bertindak cepat pada tanda amaran di bawah: garis panduan menyatakan sesiapa yang mengalaminya patut dirujuk kepada pakar ENT (telinga, hidung & tekak) secepat mungkin, kerana NPC selalu dijumpai lewat."
+    )),
+    P("⚠️", L("What raises the risk", "Apa yang menaikkan risiko"), npcFdr
+      ? L(
+          "The guideline lists infection with the Epstein-Barr virus (EBV), a first-degree relative who had NPC, eating salted fish (especially from childhood), smoking, and long exposure to wood-cooking smoke. Because a close relative had NPC, your own risk is higher — the guideline puts it at roughly 3 to 8 times that of someone with no family history. Tell your doctor about this family history.",
+          "Garis panduan menyenaraikan jangkitan virus Epstein-Barr (EBV), saudara terdekat yang menghidap NPC, makan ikan masin (terutama sejak kecil), merokok, dan pendedahan lama kepada asap memasak kayu. Kerana saudara terdekat menghidap NPC, risiko anda lebih tinggi — garis panduan menganggarkannya kira-kira 3 hingga 8 kali ganda berbanding seseorang tanpa sejarah keluarga. Beritahu doktor tentang sejarah keluarga ini."
+        )
+      : L(
+          "The guideline lists infection with the Epstein-Barr virus (EBV), a first-degree relative who had NPC, eating salted fish (especially from childhood), smoking, and long exposure to wood-cooking smoke. A first-degree relative with NPC raises the risk roughly 3 to 8 times — worth telling your doctor if that applies to you.",
+          "Garis panduan menyenaraikan jangkitan virus Epstein-Barr (EBV), saudara terdekat yang menghidap NPC, makan ikan masin (terutama sejak kecil), merokok, dan pendedahan lama kepada asap memasak kayu. Saudara terdekat dengan NPC menaikkan risiko kira-kira 3 hingga 8 kali — patut diberitahu kepada doktor jika ia berkaitan dengan anda."
+        )),
+    P("🔬", L("Which test", "Ujian mana"), L(
+      "An ENT specialist looks at the back of the nose with a thin camera (nasoendoscopy). If anything suspicious is seen, the diagnosis is confirmed with a small tissue sample (biopsy). If you have a neck lump, they may take cells from it with a fine needle (FNAC). Note: an EBV blood test is used as a research/screening tool in the guideline — it is not a stand-alone way to diagnose NPC.",
+      "Pakar ENT melihat bahagian belakang hidung dengan kamera halus (nasoendoskopi). Jika ada yang mencurigakan, diagnosis disahkan dengan sampel tisu kecil (biopsi). Jika anda ada ketulan leher, mereka mungkin mengambil sel darinya dengan jarum halus (FNAC). Nota: ujian darah EBV digunakan sebagai alat penyelidikan/saringan dalam garis panduan — ia bukan cara berdiri sendiri untuk mendiagnosis NPC."
+    )),
     P("📅", L("When & how often", "Bila & berapa kerap"), npcFdr
-      ? L("Because a close relative had this cancer, mention it to your doctor and get checked promptly if symptoms appear.", "Kerana saudara terdekat pernah mengidapnya, beritahu doktor dan buat pemeriksaan segera jika bersimptom.")
-      : L("Only when symptoms appear — this is symptom-driven, not on a fixed schedule.", "Hanya bila bersimptom — berdasarkan simptom, bukan jadual tetap.")),
+      ? L("There is no fixed schedule. Because a close relative had NPC, mention it to your doctor and get checked promptly — do not wait — if any warning sign appears.", "Tiada jadual tetap. Kerana saudara terdekat menghidap NPC, beritahu doktor dan buat pemeriksaan segera — jangan tunggu — jika ada tanda amaran.")
+      : L("There is no fixed schedule — this is driven by symptoms, not a routine. See a doctor promptly if any warning sign below appears.", "Tiada jadual tetap — berdasarkan simptom, bukan rutin. Jumpa doktor segera jika ada tanda amaran di bawah.")),
     P("👀", L("Watch for", "Perhatikan"), WARNING.npc),
     P("🚨", L("Seek help now if", "Dapatkan bantuan segera jika"), L("There is heavy nosebleeding, or trouble breathing or swallowing.", "Ada mimisan banyak, atau sukar bernafas atau menelan.")),
   ];
-  return { id: "npc", level: "info", steps, source: null, flag: FLAG_NPC, icd: "ICD-11 2B6B [to be confirmed from reference]" };
+  return { id: "npc", level: "info", steps, source: SOURCE_NPC, flag: FLAG_NPC, icd: "ICD-11 2B6B [to be confirmed from reference]" };
 }
 
 /* ------------------------------------------------------------------ */
@@ -726,8 +747,8 @@ const CSS = `
 .fcra .bars { display:grid; gap:8px; }
 .fcra .bar-row { display:grid; grid-template-columns:minmax(96px,34%) 1fr auto; align-items:center; gap:10px; }
 .fcra .bar-row .lab { font-size:13px; font-weight:600; }
-.fcra .bar-track { background:var(--line); border-radius:99px; height:16px; overflow:hidden; }
-.fcra .bar-fill { height:100%; border-radius:99px; background:var(--teal); }
+.fcra .bar-track { display:block; background:var(--line); border-radius:99px; height:16px; overflow:hidden; }
+.fcra .bar-fill { display:block; height:100%; border-radius:99px; background:var(--teal); }
 .fcra .bar-fill.f-pink { background:#c65a8e; }
 .fcra .bar-fill.f-blue { background:#2f6fb0; }
 .fcra .bar-fill.f-red { background:var(--red); }
@@ -1111,6 +1132,7 @@ Risk results: ${results.map((r) => `${r.id}: ${r.level}`).join(", ")}.
 Anchoring per module: ${results.map((r) => `${r.id} → ${r.source ? r.source : "no anchoring CPG (flagged provisional)"}`).join("; ")}.
 Note: the Cervical CPG (2nd Ed., 2015) covers diagnosis/treatment only; it does NOT set screening intervals or HPV vaccine policy — those come from Malaysia's national programme, so attribute them accordingly and do not cite the CPG for them.
 Note: the lung source is an expert consensus by Lung Cancer Network Malaysia and partner societies (1st Ed., April 2025), NOT a MaHTAS/MOH CPG — Malaysia had no MOH lung cancer CPG when it was written, so describe it as guidelines/consensus rather than a KKM CPG. Its screening rules are: LDCT offered at ages 45-75 with >=20 years smoking duration (pack-years deliberately dropped in favour of duration); LDCT recommended for non-smokers aged >40 with a first-degree relative with lung cancer, starting at 40 or the youngest affected relative's age at diagnosis, whichever is first; LDCT is the gold standard; and suspected lung cancer should reach a lung specialist within 2 weeks. It does NOT set screening rules for occupational exposure or second-hand smoke, and does not cover small cell lung cancer or advanced disease — do not cite it for those.
+Note: NPC is anchored to the MOH/MaHTAS CPG Management of Nasopharyngeal Carcinoma (2016, MOH/P/PAK/326.16(GU)) — a genuine KKM/MaHTAS CPG (developed with MSO-HNS and the Academy of Medicine Malaysia), so describe it as a KKM CPG, NOT a society consensus. It covers risk factors, clinical presentation, referral, investigations, staging, treatment and follow-up. It explicitly does NOT recommend population screening — EBV serology and nasoendoscopy screening were judged to have insufficient evidence (§2.3) — so do not describe a routine NPC screening schedule, and do not present the EBV blood test as a stand-alone diagnostic test. Referral for the warning signs is "as soon as possible" (consensus, Recommendation 1), not a fixed week-count. A first-degree relative with NPC is a cited risk factor (relative risk ~3.1 to 8.0) but the CPG sets no family-history screening rule.
 Relatives with cancer: ${relatives.map((r) => `${r.relationship} — ${r.cancer}`).join("; ") || "none"}.
 
 INSTRUCTIONS:
@@ -1148,10 +1170,24 @@ INSTRUCTIONS:
       });
 
       const data = await response.json();
+
+      // /api/chat returns { error: "..." } on any server-side failure (missing
+      // ANTHROPIC_API_KEY, bad model, web search not enabled, etc.). Surface it
+      // instead of hiding every failure behind a generic message — otherwise the
+      // panel looks identically "broken" for entirely different causes.
+      if (!response.ok || data.error) {
+        console.error("CpgChat: /api/chat failed", response.status, data);
+        const detail = typeof data.error === "string" && data.error
+          ? data.error
+          : tr(L(`The guideline assistant returned an error (${response.status}). Check that ANTHROPIC_API_KEY is set in Vercel and that a fresh build has run.`, `Pembantu garis panduan memulangkan ralat (${response.status}). Pastikan ANTHROPIC_API_KEY ditetapkan di Vercel dan binaan baharu telah dijalankan.`));
+        setMessages((m) => [...m, { role: "assistant", text: detail }]);
+        return;
+      }
+
       const answer = (data.content || [])
         .filter((b) => b.type === "text")
         .map((b) => b.text)
-        .join("\n") || tr(L("Sorry, I couldn't get an answer. Please try again.", "Maaf, saya tidak dapat jawapan. Sila cuba lagi."));
+        .join("\n").trim() || tr(L("The assistant did not return any text. If a web search was running it may have timed out — please try again.", "Pembantu tidak memulangkan sebarang teks. Jika carian web sedang berjalan ia mungkin tamat masa — sila cuba lagi."));
       setMessages((m) => [...m, { role: "assistant", text: answer }]);
     } catch (err) {
       setMessages((m) => [...m, { role: "assistant", text: tr(L("Connection error. Please try again.", "Ralat sambungan. Sila cuba lagi.")) }]);
@@ -2009,7 +2045,7 @@ export default function FamilyCancerRiskAssistant() {
           <div className="brandmark">🧬</div>
           <div>
             <div className="t">{tr(L("Family Cancer Risk Check", "Semakan Risiko Kanser Keluarga"))}</div>
-            <div className="s">{tr(L("Malaysia · Prototype", "Malaysia · Prototaip"))}</div>
+            <div className="s">{tr(L("by Dr Nurul Amiera Asli · IKN · Prototype", "oleh Dr Nurul Amiera Asli · IKN · Prototaip"))}</div>
           </div>
           <div className="langtoggle" role="group" aria-label="Language">
             <button aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button>
