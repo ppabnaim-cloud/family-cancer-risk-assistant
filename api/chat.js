@@ -57,10 +57,15 @@ export default async function handler(req, res) {
     const data = await upstream.json();
 
     if (!upstream.ok) {
-      // Log the detail server-side; return something plain to the user.
+      // Log the full detail server-side; return the upstream status and Anthropic's
+      // own error message (e.g. "invalid x-api-key", "model ... not found",
+      // "web search is not enabled for this organization"). These are non-sensitive
+      // and are what's needed to fix the panel without digging through logs.
       console.error("Anthropic API error:", upstream.status, JSON.stringify(data));
+      const detail =
+        (data && data.error && (data.error.message || data.error.type)) || "upstream error";
       return res.status(upstream.status).json({
-        error: "The guideline assistant is unavailable right now.",
+        error: `The guideline assistant could not answer (HTTP ${upstream.status}): ${detail}`,
       });
     }
 

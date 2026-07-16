@@ -11,7 +11,7 @@
  *   EMAILJS_PRIVATE_KEY    your EmailJS Private Key (required for API calls
  *                          made outside a browser — EmailJS rejects them
  *                          otherwise)
- *   FEEDBACK_TO_EMAIL      optional. Defaults to nurulamieraasli@gmail.com.
+ *   FEEDBACK_TO_EMAIL      optional. Defaults to amieraasli@gmail.com.
  *                          Only takes effect if your EmailJS template's
  *                          "To Email" field is set to {{to_email}}.
  *
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
       user_id: EMAILJS_PUBLIC_KEY,
       accessToken: EMAILJS_PRIVATE_KEY,
       template_params: {
-        to_email: FEEDBACK_TO_EMAIL || "nurulamieraasli@gmail.com",
+        to_email: FEEDBACK_TO_EMAIL || "amieraasli@gmail.com",
         subject: "Family Cancer Risk Assistant — new feedback",
         summary,
         // Individual fields too, in case the template prefers them separately.
