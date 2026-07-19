@@ -886,6 +886,30 @@ const CSS = `
   .fcra .summary-actions { display:none !important; }
   .fcra .summary-band { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
+
+/* ---- Landing hub ---- */
+.fcra .hero { background:linear-gradient(135deg, var(--teal) 0%, var(--teal-d) 100%); border:0; color:#fff; box-shadow:0 10px 30px rgba(10,95,90,.22); }
+.fcra .hero .eyebrow { color:#bfe8e3; }
+.fcra .hero h1 { color:#fff; }
+.fcra .hero p { color:#d7ecea; margin-bottom:16px; }
+.fcra .btn.hero-cta { background:#fff; color:var(--teal-d); font-weight:800; font-size:16px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.16); }
+.fcra .btn.hero-cta:hover { background:#f2fbfa; }
+.fcra .hubtiles { display:grid; gap:10px; grid-template-columns:repeat(3,1fr); margin-top:14px; }
+.fcra .hubtile { display:flex; flex-direction:column; align-items:flex-start; gap:7px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:15px 16px; font:inherit; color:var(--ink); cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .05s; }
+.fcra .hubtile:hover { border-color:var(--teal); box-shadow:0 3px 12px rgba(13,125,118,.12); }
+.fcra .hubtile:active { transform:translateY(1px); }
+.fcra .hubtile .hi { font-size:24px; line-height:1; flex:none; }
+.fcra .hubtile .htx { display:flex; flex-direction:column; gap:2px; }
+.fcra .hubtile .ht { font-weight:700; font-size:14px; }
+.fcra .hubtile .hs { font-size:12px; color:var(--muted); line-height:1.35; }
+.fcra .panelhead { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.fcra .panelhead h2 { margin:0; }
+@media (max-width:560px){
+  .fcra .hubtiles { grid-template-columns:1fr; }
+  .fcra .hubtile { flex-direction:row; align-items:center; }
+  .fcra .hubtile .hi { width:28px; text-align:center; }
+  .fcra .hubtile .htx { flex:1; }
+}
 `;
 
 /* ------------------------------------------------------------------ */
@@ -1973,6 +1997,7 @@ export default function FamilyCancerRiskAssistant() {
   const [showEmg, setShowEmg] = useState(false);
   const [entered, setEntered] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [panel, setPanel] = useState(null); // null | "faq" | "registry" | "chat" — landing-hub sub-views
 
   const [profile, setProfile] = useState({
     age: "", sex: "", ethnicity: "", state: "", everSex: "", smoke: "", smoke20y: false,
@@ -2021,7 +2046,7 @@ export default function FamilyCancerRiskAssistant() {
 
   const reset = () => {
     setProfile({ age: "", sex: "", ethnicity: "", state: "", everSex: "", smoke: "", smoke20y: false, passiveSmoke: "", occupationalHazards: [] });
-    setRelatives([]); setGenetics([]); setSymptoms({}); setSymNoneChecked(false); setStep(0);
+    setRelatives([]); setGenetics([]); setSymptoms({}); setSymNoneChecked(false); setStep(0); setPanel(null);
   };
 
   const toggleHazard = (id) =>
@@ -2065,63 +2090,110 @@ export default function FamilyCancerRiskAssistant() {
           <Stepper step={step} lang={lang} onJump={(n) => setStep(n)} />
         )}
 
-        {/* STEP 0 — Intro */}
-        {step === 0 && (
+        {/* STEP 0 — Landing hub */}
+        {step === 0 && panel === null && (
           <>
-            <div className="card">
-              <span className="slogan"><span className="dot" />{tr(SLOGAN)}</span>
-              <p className="eyebrow">{tr(L("About this tool", "Tentang alat ini"))}</p>
+            {/* PRIMARY — the journey (visually dominant) */}
+            <div className="card hero">
+              <p className="eyebrow">{tr(L("Start here", "Mula di sini"))}</p>
               <h1>{tr(L("Understand your family cancer risk — and your next step.", "Fahami risiko kanser keluarga anda — dan langkah seterusnya."))}</h1>
-              <p className="muted">
+              <p>
                 {tr(L(
-                  "Answer a few simple questions about your family. This tool will tell you your risk level and exactly what to do next: whether to see a doctor, which test to ask for, how often, and what warning signs to watch.",
-                  "Jawab beberapa soalan mudah tentang keluarga anda. Alat ini akan beritahu tahap risiko dan apa langkah seterusnya: perlu jumpa doktor, ujian mana, berapa kerap, dan tanda amaran untuk diperhatikan."
+                  "Answer a few simple questions about your family. You'll get your risk level and a clear next step: whether to see a doctor, which test to ask for, how often, and what warning signs to watch.",
+                  "Jawab beberapa soalan mudah tentang keluarga anda. Anda akan dapat tahap risiko dan langkah seterusnya yang jelas: perlu jumpa doktor atau tidak, ujian mana, berapa kerap, dan tanda amaran untuk diperhatikan."
                 ))}
               </p>
-              <div className="notice">
-                <h3>{tr(L("What this covers", "Apa yang diliputi"))}</h3>
-                <p className="small muted" style={{ marginBottom: 6 }}>
-                  {tr(L("Phase 1 — the top common cancers in Malaysia:", "Fasa 1 — kanser paling biasa di Malaysia:"))}
-                </p>
-                <div className="chips">
-                  {["colorectal", "breast", "lung", "cervical", "npc"].map((id) => (
-                    <span className="chip" aria-pressed="false" key={id} style={{ cursor: "default" }}>
-                      {cancerMeta(id).emoji} {tr(cancerMeta(id).label)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <WhyUse lang={lang} />
-
-            <RegistrySnapshot lang={lang} />
-
-            <div className="card">
-              <p className="eyebrow">{tr(L("How it works", "Cara ia berfungsi"))}</p>
-              <p className="small muted">
-                {tr(L(
-                  "This prototype is anchored to Malaysian Clinical Practice Guidelines (CPGs). It is built to use retrieved guideline content rather than the AI model's own guesses. Where a guideline is not available, it says so instead of inventing an answer.",
-                  "Prototaip ini berpaut kepada Garis Panduan Amalan Klinikal (CPG) Malaysia. Ia dibina untuk menggunakan kandungan garis panduan yang diambil, bukan tekaan model AI. Jika garis panduan tiada, ia akan nyatakan, bukan mereka jawapan."
-                ))}
-              </p>
-              <div className="flag">
-                {tr(L(
-                  "🔒 Your privacy: we only ask age, sex, ethnicity and state. No name, IC, or phone number. Nothing is saved — it disappears when you close this page.",
-                  "🔒 Privasi anda: kami hanya tanya umur, jantina, etnik dan negeri. Tiada nama, IC atau nombor telefon. Tiada apa disimpan — semuanya hilang bila anda tutup halaman ini."
-                ))}
-              </div>
-              <button className="btn primary block" onClick={() => setStep(1)}>
+              <button className="btn hero-cta block" onClick={() => setStep(1)}>
                 {tr(L("Start the check", "Mula semakan"))} →
               </button>
+            </div>
+
+            {/* SECONDARY — three tiles */}
+            <div className="hubtiles">
+              <button className="hubtile" onClick={() => setPanel("faq")}>
+                <span className="hi">👪</span>
+                <span className="htx">
+                  <span className="ht">{tr(L("Why use this?", "Kenapa guna ini?"))}</span>
+                  <span className="hs">{tr(L("Why a strong family history matters", "Kenapa sejarah keluarga yang kuat penting"))}</span>
+                </span>
+              </button>
+              <button className="hubtile" onClick={() => setPanel("registry")}>
+                <span className="hi">📊</span>
+                <span className="htx">
+                  <span className="ht">{tr(L("Cancer in Malaysia", "Kanser di Malaysia"))}</span>
+                  <span className="hs">{tr(L("National Cancer Registry snapshot", "Ringkasan Pendaftaran Kanser Kebangsaan"))}</span>
+                </span>
+              </button>
+              <button className="hubtile" onClick={() => setPanel("chat")}>
+                <span className="hi">💬</span>
+                <span className="htx">
+                  <span className="ht">{tr(L("Ask the guidelines", "Tanya garis panduan"))}</span>
+                  <span className="hs">{tr(L("Chat about Malaysian cancer CPGs", "Bualan tentang CPG kanser Malaysia"))}</span>
+                </span>
+              </button>
+            </div>
+
+            {/* Trust line */}
+            <div className="card" style={{ marginTop: 16 }}>
+              <div className="flag" style={{ margin: 0 }}>
+                {tr(L(
+                  "🔒 Private & free — we ask only age, sex, ethnicity and state. No name, IC or phone number. Nothing is saved; it disappears when you close this page.",
+                  "🔒 Peribadi & percuma — kami tanya umur, jantina, etnik dan negeri sahaja. Tiada nama, IC atau nombor telefon. Tiada apa disimpan; semuanya hilang bila anda tutup halaman ini."
+                ))}
+              </div>
               <div className="disclaimer">
                 <span>ℹ️</span>
                 <span>{tr(L(
-                  "This tool supports decisions. It does not replace a doctor and does not diagnose.",
-                  "Alat ini menyokong keputusan. Ia tidak menggantikan doktor dan tidak membuat diagnosis."
+                  "Anchored to Malaysian CPGs. It supports decisions — it does not replace a doctor and does not diagnose.",
+                  "Berpaut pada CPG Malaysia. Ia menyokong keputusan — tidak menggantikan doktor dan tidak membuat diagnosis."
                 ))}</span>
               </div>
             </div>
+          </>
+        )}
+
+        {/* STEP 0 — FAQ panel */}
+        {step === 0 && panel === "faq" && (
+          <>
+            <div className="panelhead">
+              <button className="btn ghost" onClick={() => setPanel(null)}>← {tr(L("Back", "Kembali"))}</button>
+            </div>
+            <div className="card">
+              <p className="eyebrow">{tr(L("FAQ", "Soalan lazim"))}</p>
+              <h2>{tr(L("Why should I use this if cancer runs in my family?", "Kenapa saya perlu guna ini jika kanser ada dalam keluarga saya?"))}</h2>
+              <p className="muted">
+                {tr(L(
+                  "A strong family history — several close relatives, or relatives diagnosed young — can mean you carry a higher inherited risk. That often changes when you should start screening and which test you need, sometimes years earlier than the general public. This tool turns that family history into a clear, guideline-based plan.",
+                  "Sejarah keluarga yang kuat — beberapa saudara terdekat, atau saudara yang didiagnos pada usia muda — boleh bermakna anda membawa risiko warisan yang lebih tinggi. Ini sering mengubah bila anda patut mula saringan dan ujian mana yang diperlukan, kadangkala bertahun lebih awal daripada orang awam. Alat ini menukar sejarah keluarga itu kepada pelan yang jelas dan berpandukan garis panduan."
+                ))}
+              </p>
+            </div>
+            <WhyUse lang={lang} />
+            <div className="card">
+              <button className="btn primary block" onClick={() => { setPanel(null); setStep(1); }}>
+                {tr(L("Start the check", "Mula semakan"))} →
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* STEP 0 — Registry panel */}
+        {step === 0 && panel === "registry" && (
+          <>
+            <div className="panelhead">
+              <button className="btn ghost" onClick={() => setPanel(null)}>← {tr(L("Back", "Kembali"))}</button>
+            </div>
+            <RegistrySnapshot lang={lang} />
+          </>
+        )}
+
+        {/* STEP 0 — Guideline chat panel */}
+        {step === 0 && panel === "chat" && (
+          <>
+            <div className="panelhead">
+              <button className="btn ghost" onClick={() => setPanel(null)}>← {tr(L("Back", "Kembali"))}</button>
+            </div>
+            <CpgChat results={results} profile={profile} relatives={relatives} lang={lang} />
           </>
         )}
 
