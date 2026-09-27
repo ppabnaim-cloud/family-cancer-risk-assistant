@@ -1168,7 +1168,7 @@ function Pedigree({ relatives, profile, lang }) {
 /* Ask the CPGs — Gemini NotebookLM, grounded ONLY in the guidelines   */
 /* ------------------------------------------------------------------ */
 /* This replaces the earlier free-text AI chat panel (CpgChat, which   */
-/* called /api/chat with web search). A NotebookLM notebook answers    */
+/* called the now-deleted /api/chat). A NotebookLM notebook answers    */
 /* only from the sources uploaded into it and cites the passage it     */
 /* used, so a patient asking a question cannot be told something the   */
 /* CPGs do not say. That closed-source grounding is the whole reason   */

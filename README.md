@@ -62,7 +62,8 @@ advice, and no inference is drawn from the score.
 ## Ask the CPGs — NotebookLM panel
 
 The earlier free-text AI chat panel (`CpgChat` → `/api/chat`, Anthropic Messages
-API with web search) has been **replaced** by `CpgNotebook`: an embedded link to
+API with web search) has been **removed** — component, endpoint and
+`ANTHROPIC_API_KEY` alike — and replaced by `CpgNotebook`: an embedded link to
 a Google NotebookLM notebook whose only sources are the Malaysian CPGs behind
 this app. NotebookLM answers strictly from its uploaded sources and cites the
 passage used, so a patient cannot be told something the guidelines do not say —
@@ -77,6 +78,12 @@ that closed-source grounding is the reason for the swap.
 The panel states its limits plainly: NotebookLM is a Google product outside this
 app, it is still AI-generated, it cannot see anything the patient entered here,
 and a Google sign-in may be required.
+
+Deleting `/api/chat` was deliberate: it was a metered LLM proxy with no caller
+left, and leaving it deployed would have carried a running API cost. The app now
+has exactly one serverless function, `/api/feedback`. **Remove `ANTHROPIC_API_KEY`
+from Vercel → Settings → Environment Variables** as well — the code no longer
+reads it.
 
 ## Local development
 
@@ -100,7 +107,6 @@ Set in **Vercel → Settings → Environment Variables** (and `.env.local` for
 
 | Variable | Purpose |
 |---|---|
-| `ANTHROPIC_API_KEY` | **No longer used by the UI.** `/api/chat` is retained but unreferenced since the CPG Q&A chat was replaced by the NotebookLM panel — remove both if you do not intend to restore a chat panel, so no unused LLM proxy stays deployed |
 | `EMAILJS_SERVICE_ID` | Feedback email |
 | `EMAILJS_TEMPLATE_ID` | Feedback email |
 | `EMAILJS_PUBLIC_KEY` | EmailJS Public Key (User ID) |
