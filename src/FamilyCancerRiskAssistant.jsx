@@ -770,14 +770,45 @@ const CSS = `
 .fcra .modal h2 { color:var(--red); }
 .fcra ul.plain { margin:0 0 14px; padding-left:20px; } .fcra ul.plain li { margin-bottom:6px; }
 
-.fcra .cpg-chat { background:var(--surface); }
-.fcra .cpg-messages { display:flex; flex-direction:column; gap:10px; padding:4px 0; }
-.fcra .cpg-msg { display:flex; gap:10px; align-items:flex-start; }
-.fcra .cpg-role { font-size:18px; flex:none; margin-top:2px; }
-.fcra .cpg-bubble { font-size:13.5px; line-height:1.55; padding:10px 14px; border-radius:14px; max-width:92%; white-space:pre-wrap; }
-.fcra .cpg-user .cpg-bubble { background:var(--teal-soft); color:var(--ink); margin-left:auto; border-bottom-right-radius:4px; }
-.fcra .cpg-assistant .cpg-bubble { background:#f6f8f7; color:var(--ink); border-bottom-left-radius:4px; }
-.fcra .cpg-loading { color:var(--muted); font-style:italic; }
+/* --- Ask the CPGs — NotebookLM panel --------------------------------*/
+.fcra .nbcard { border-top:4px solid var(--teal); }
+.fcra .nb-frame { display:block; width:100%; height:560px; border:1px solid var(--line); border-radius:14px; background:#fff; margin-bottom:12px; }
+.fcra .nb-launch { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; background:var(--teal); color:#fff; border-radius:14px; padding:16px; font-weight:800; font-size:15.5px; text-decoration:none; }
+.fcra .nb-launch:hover { background:var(--teal-d); }
+.fcra .nb-how { display:grid; gap:9px; margin-top:14px; }
+.fcra .nb-step { display:flex; gap:11px; align-items:flex-start; font-size:13.5px; color:var(--muted); line-height:1.45; }
+.fcra .nb-step .nbn { flex:none; width:22px; height:22px; border-radius:99px; background:var(--teal-soft); color:var(--teal-d); font-size:12px; font-weight:800; display:grid; place-items:center; }
+.fcra .nb-ask { border:1px solid #b9ded9; background:var(--teal-soft); color:var(--teal-d); border-radius:999px; padding:8px 13px; font:inherit; font-weight:600; font-size:12.5px; line-height:1.3; cursor:pointer; text-align:left; }
+.fcra .nb-ask:hover { background:#d2e8e5; }
+
+/* --- Public awareness quiz ------------------------------------------*/
+.fcra .qzcard { border-top:4px solid var(--accent); }
+.fcra .qz-prog { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.fcra .qz-track { flex:1; height:7px; border-radius:99px; background:var(--line); overflow:hidden; }
+.fcra .qz-fill { display:block; height:100%; border-radius:99px; background:var(--teal); transition:width .2s; }
+.fcra .qz-count { font-size:12px; font-weight:800; color:var(--muted); white-space:nowrap; }
+.fcra .qz-q { font-size:17px; font-weight:700; line-height:1.4; margin:0 0 14px; }
+.fcra .qz-opts { display:flex; flex-direction:column; gap:9px; }
+.fcra .qz-opt { display:flex; gap:11px; align-items:flex-start; width:100%; text-align:left; border:1.5px solid var(--line); background:#fff; border-radius:13px; padding:13px 15px; font:inherit; font-size:14.5px; line-height:1.4; color:var(--ink); cursor:pointer; }
+.fcra .qz-opt:enabled:hover { border-color:var(--teal); }
+.fcra .qz-opt:disabled { cursor:default; }
+.fcra .qz-opt .qz-key { flex:none; width:24px; height:24px; border-radius:99px; background:var(--line); color:var(--muted); font-size:12px; font-weight:800; display:grid; place-items:center; }
+.fcra .qz-opt.right { border-color:var(--green); background:var(--green-soft); }
+.fcra .qz-opt.right .qz-key { background:var(--green); color:#fff; }
+.fcra .qz-opt.wrong { border-color:var(--red); background:var(--red-soft); }
+.fcra .qz-opt.wrong .qz-key { background:var(--red); color:#fff; }
+.fcra .qz-why { margin-top:15px; border-radius:14px; padding:14px 16px; background:var(--green-soft); border:1px solid #b6ddc8; }
+.fcra .qz-why.miss { background:var(--amber-soft); border-color:#f0d79a; }
+.fcra .qz-why .qz-verdict { font-weight:800; font-size:14.5px; margin-bottom:5px; color:#1c6644; }
+.fcra .qz-why.miss .qz-verdict { color:#8a5a10; }
+.fcra .qz-why p { font-size:13.5px; line-height:1.55; margin:0 0 6px; }
+.fcra .qz-why .qz-src { font-size:11.5px; color:var(--muted); margin:0; }
+.fcra .qz-score { text-align:center; padding:8px 4px 2px; }
+.fcra .qz-ring { width:96px; height:96px; margin:0 auto 12px; border-radius:99px; display:grid; place-items:center; background:var(--teal-soft); border:3px solid var(--teal); }
+.fcra .qz-ring b { font-size:25px; font-weight:800; color:var(--teal-d); letter-spacing:-.02em; }
+.fcra .qz-review { margin-top:18px; }
+.fcra .qz-rev-row { display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.45; padding:10px 0; border-top:1px solid var(--line); }
+.fcra .qz-rev-row .qz-tick { flex:none; }
 
 @media (max-width:480px){ .fcra h1{font-size:22px;} .fcra .wrap{padding:16px 12px 96px;} }
 @media (prefers-reduced-motion: reduce){ .fcra *{ transition:none !important; } }
@@ -894,7 +925,7 @@ const CSS = `
 .fcra .hero p { color:#d7ecea; margin-bottom:16px; }
 .fcra .btn.hero-cta { background:#fff; color:var(--teal-d); font-weight:800; font-size:16px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.16); }
 .fcra .btn.hero-cta:hover { background:#f2fbfa; }
-.fcra .hubtiles { display:grid; gap:10px; grid-template-columns:repeat(3,1fr); margin-top:14px; }
+.fcra .hubtiles { display:grid; gap:10px; grid-template-columns:repeat(2,1fr); margin-top:14px; }
 .fcra .hubtile { display:flex; flex-direction:column; align-items:flex-start; gap:7px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:15px 16px; font:inherit; color:var(--ink); cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .05s; }
 .fcra .hubtile:hover { border-color:var(--teal); box-shadow:0 3px 12px rgba(13,125,118,.12); }
 .fcra .hubtile:active { transform:translateY(1px); }
@@ -1134,7 +1165,15 @@ function Pedigree({ relatives, profile, lang }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* CPG AI Q&A — uses Anthropic API with web search                     */
+/* Ask the CPGs — Gemini NotebookLM, grounded ONLY in the guidelines   */
+/* ------------------------------------------------------------------ */
+/* This replaces the earlier free-text AI chat panel (CpgChat, which   */
+/* called the now-deleted /api/chat). A NotebookLM notebook answers    */
+/* only from the sources uploaded into it and cites the passage it     */
+/* used, so a patient asking a question cannot be told something the   */
+/* CPGs do not say. That closed-source grounding is the whole reason   */
+/* for the swap: far less room for hallucination than an open model    */
+/* searching the web.                                                  */
 /* ------------------------------------------------------------------ */
 const CPG_LINKS = [
   { label: "Colorectal Carcinoma (2017)", url: "https://www.acadmed.org.my/index.cfm?menuid=67" },
@@ -1144,135 +1183,114 @@ const CPG_LINKS = [
   { label: "AMM CPG Directory", url: "https://www.acadmed.org.my/index.cfm?menuid=67" },
 ];
 
-function CpgChat({ results, profile, relatives, lang }) {
+/* The notebook itself, and the quiz artifact generated from it. Both are
+   share links — change them here in one place if the notebook is rebuilt. */
+const CPG_NOTEBOOK_URL = "https://notebook.google.com/notebook/54b262c4-b3f8-4aff-b7fd-47f7be74a132/preview";
+const QUIZ_NOTEBOOK_URL = "https://notebook.google.com/notebook/54b262c4-b3f8-4aff-b7fd-47f7be74a132/artifact/543cab2a-9b24-41ff-8d8c-b06f436c547a";
+
+/* Google serves NotebookLM with a frame-ancestors / X-Frame-Options policy
+   that blocks third-party framing, so an <iframe> renders as a blank box.
+   The panel therefore opens the notebook in its own tab. The iframe path is
+   wired and ready: flip this to true if NotebookLM ever permits embedding. */
+const CPG_NOTEBOOK_IFRAME = false;
+
+/* Starter questions the patient can copy straight into the notebook. */
+const NOTEBOOK_ASKS = [
+  L("When should I start mammogram screening?", "Bila saya patut mula saringan mamogram?"),
+  L("What is iFOBT and how is it done?", "Apa itu iFOBT dan bagaimana ia dilakukan?"),
+  L("My father had colon cancer at 55 — when should I start screening?", "Bapa saya menghidap kanser kolon pada umur 55 — bila saya patut mula saringan?"),
+  L("Who is offered a low-dose CT scan for lung cancer?", "Siapa ditawarkan imbasan CT dos rendah untuk kanser paru-paru?"),
+  L("What are the warning signs of nose-and-throat cancer?", "Apakah tanda amaran kanser hidung dan tekak?"),
+];
+
+function CpgNotebook({ lang }) {
   const tr = (v) => pick(v, lang);
-  const [q, setQ] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(null);
 
-  const systemPrompt = `You are a clinical guideline assistant for Malaysian healthcare, specialising in cancer screening.
-Context: The user has just completed a family cancer risk assessment. Their profile: sex=${profile.sex}, age=${profile.age}, ethnicity=${profile.ethnicity}, state=${profile.state}, smoking=${profile.smoke || "unknown"}${profile.smoke20y ? " (20+ years duration)" : ""}, secondHandSmoke=${profile.passiveSmoke || "unknown"}, occupationalExposures=${(profile.occupationalHazards || []).join(",") || "none reported"}.
-Risk results: ${results.map((r) => `${r.id}: ${r.level}`).join(", ")}.
-Anchoring per module: ${results.map((r) => `${r.id} → ${r.source ? r.source : "no anchoring CPG (flagged provisional)"}`).join("; ")}.
-Note: the Cervical CPG (2nd Ed., 2015) covers diagnosis/treatment only; it does NOT set screening intervals or HPV vaccine policy — those come from Malaysia's national programme, so attribute them accordingly and do not cite the CPG for them.
-Note: the lung source is an expert consensus by Lung Cancer Network Malaysia and partner societies (1st Ed., April 2025), NOT a MaHTAS/MOH CPG — Malaysia had no MOH lung cancer CPG when it was written, so describe it as guidelines/consensus rather than a KKM CPG. Its screening rules are: LDCT offered at ages 45-75 with >=20 years smoking duration (pack-years deliberately dropped in favour of duration); LDCT recommended for non-smokers aged >40 with a first-degree relative with lung cancer, starting at 40 or the youngest affected relative's age at diagnosis, whichever is first; LDCT is the gold standard; and suspected lung cancer should reach a lung specialist within 2 weeks. It does NOT set screening rules for occupational exposure or second-hand smoke, and does not cover small cell lung cancer or advanced disease — do not cite it for those.
-Note: NPC is anchored to the MOH/MaHTAS CPG Management of Nasopharyngeal Carcinoma (2016, MOH/P/PAK/326.16(GU)) — a genuine KKM/MaHTAS CPG (developed with MSO-HNS and the Academy of Medicine Malaysia), so describe it as a KKM CPG, NOT a society consensus. It covers risk factors, clinical presentation, referral, investigations, staging, treatment and follow-up. It explicitly does NOT recommend population screening — EBV serology and nasoendoscopy screening were judged to have insufficient evidence (§2.3) — so do not describe a routine NPC screening schedule, and do not present the EBV blood test as a stand-alone diagnostic test. Referral for the warning signs is "as soon as possible" (consensus, Recommendation 1), not a fixed week-count. A first-degree relative with NPC is a cited risk factor (relative risk ~3.1 to 8.0) but the CPG sets no family-history screening rule.
-Relatives with cancer: ${relatives.map((r) => `${r.relationship} — ${r.cancer}`).join("; ") || "none"}.
-
-INSTRUCTIONS:
-- Focus on Malaysian Clinical Practice Guidelines (CPGs) from the Academy of Medicine of Malaysia (AMM) and KKM.
-- Use web search to find current CPG recommendations when relevant. Search acadmed.org.my and moh.gov.my for Malaysian guidelines.
-- Always state which CPG edition your answer comes from.
-- If no Malaysian CPG or local consensus exists for a topic, say so clearly and note that international guidelines need clinician confirmation. Never blur a society consensus into a KKM CPG.
-- Keep answers concise (3-5 sentences). Use lay language with medical terms in brackets.
-- End every answer with: "This is AI-generated guidance. Please confirm with your doctor."
-- Answer in ${lang === "bm" ? "Bahasa Malaysia" : "English"}.`;
-
-  const askCpg = async () => {
-    if (!q.trim() || loading) return;
-    const userMsg = q.trim();
-    setQ("");
-    setMessages((m) => [...m, { role: "user", text: userMsg }]);
-    setLoading(true);
-
+  const copyAsk = async (text, idx) => {
     try {
-      const apiMessages = [
-        ...messages.map((m) => ({ role: m.role === "user" ? "user" : "assistant", content: m.text })),
-        { role: "user", content: userMsg },
-      ];
-
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: apiMessages,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-        }),
-      });
-
-      const data = await response.json();
-
-      // /api/chat returns { error: "..." } on any server-side failure (missing
-      // ANTHROPIC_API_KEY, bad model, web search not enabled, etc.). Surface it
-      // instead of hiding every failure behind a generic message — otherwise the
-      // panel looks identically "broken" for entirely different causes.
-      if (!response.ok || data.error) {
-        console.error("CpgChat: /api/chat failed", response.status, data);
-        const detail = typeof data.error === "string" && data.error
-          ? data.error
-          : tr(L(`The guideline assistant returned an error (${response.status}). Check that ANTHROPIC_API_KEY is set in Vercel and that a fresh build has run.`, `Pembantu garis panduan memulangkan ralat (${response.status}). Pastikan ANTHROPIC_API_KEY ditetapkan di Vercel dan binaan baharu telah dijalankan.`));
-        setMessages((m) => [...m, { role: "assistant", text: detail }]);
-        return;
-      }
-
-      const answer = (data.content || [])
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("\n").trim() || tr(L("The assistant did not return any text. If a web search was running it may have timed out — please try again.", "Pembantu tidak memulangkan sebarang teks. Jika carian web sedang berjalan ia mungkin tamat masa — sila cuba lagi."));
-      setMessages((m) => [...m, { role: "assistant", text: answer }]);
-    } catch (err) {
-      setMessages((m) => [...m, { role: "assistant", text: tr(L("Connection error. Please try again.", "Ralat sambungan. Sila cuba lagi.")) }]);
-    } finally {
-      setLoading(false);
+      await navigator.clipboard.writeText(text);
+      setCopied(idx);
+      window.setTimeout(() => setCopied(null), 1800);
+    } catch {
+      /* Clipboard is blocked in some in-app browsers — the question is
+         still on screen to read and retype, so fail quietly. */
     }
   };
 
   return (
-    <div className="card cpg-chat">
-      <h3 style={{ marginBottom: 4 }}>💬 {tr(L("Ask about Malaysian guidelines", "Tanya tentang garis panduan Malaysia"))}</h3>
-      <p className="muted small" style={{ marginBottom: 10 }}>
+    <div className="card nbcard">
+      <h3 style={{ marginBottom: 4 }}>📓 {tr(L("Ask the guidelines directly", "Tanya garis panduan secara terus"))}</h3>
+      <p className="muted small" style={{ marginBottom: 14 }}>
         {tr(L(
-          "Ask any question about cancer screening guidelines. The AI will search Malaysian CPGs and medical sources.",
-          "Tanya apa-apa soalan tentang garis panduan saringan kanser. AI akan mencari CPG Malaysia dan sumber perubatan."
+          "This opens a Google NotebookLM notebook whose only sources are the Malaysian cancer guidelines behind this app. It answers from those documents and shows you the passage it used — so it cannot invent a recommendation the guidelines do not contain.",
+          "Ini membuka buku nota Google NotebookLM yang sumber tunggalnya ialah garis panduan kanser Malaysia di sebalik aplikasi ini. Ia menjawab daripada dokumen tersebut dan menunjukkan petikan yang digunakannya — jadi ia tidak boleh mencipta saranan yang tiada dalam garis panduan."
         ))}
       </p>
 
-      {/* Quick-ask chips */}
-      <div className="chips" style={{ marginBottom: 12 }}>
-        {[
-          L("When should I start mammogram?", "Bila patut mula mamogram?"),
-          L("What is iFOBT?", "Apa itu iFOBT?"),
-          L("Is HPV vaccine free in Malaysia?", "Adakah vaksin HPV percuma di Malaysia?"),
-        ].map((suggestion, i) => (
-          <button key={i} className="chip" style={{ fontSize: 12, padding: "7px 12px" }}
-            onClick={() => { setQ(tr(suggestion)); }}>{tr(suggestion)}</button>
+      {CPG_NOTEBOOK_IFRAME && (
+        <iframe
+          className="nb-frame"
+          src={CPG_NOTEBOOK_URL}
+          title={tr(L("Malaysian cancer CPGs — NotebookLM", "CPG kanser Malaysia — NotebookLM"))}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      )}
+
+      <a className="nb-launch" href={CPG_NOTEBOOK_URL} target="_blank" rel="noopener noreferrer">
+        <span>📓</span>
+        <span>{tr(L("Open the CPG notebook", "Buka buku nota CPG"))}</span>
+        <span>↗</span>
+      </a>
+
+      <div className="nb-how">
+        <div className="nb-step">
+          <span className="nbn">1</span>
+          <span>{tr(L(
+            "The notebook opens in a new tab. You may be asked to sign in with a Google account — nothing from this app is sent with you.",
+            "Buku nota terbuka dalam tab baharu. Anda mungkin diminta masuk dengan akaun Google — tiada apa daripada aplikasi ini dihantar bersama anda."
+          ))}</span>
+        </div>
+        <div className="nb-step">
+          <span className="nbn">2</span>
+          <span>{tr(L(
+            "Type your question in plain English or Bahasa Malaysia. Tap a citation to see the exact guideline text behind the answer.",
+            "Taip soalan anda dalam bahasa Inggeris atau Bahasa Malaysia yang mudah. Tekan sitasi untuk melihat teks garis panduan sebenar di sebalik jawapan."
+          ))}</span>
+        </div>
+        <div className="nb-step">
+          <span className="nbn">3</span>
+          <span>{tr(L(
+            "If the guidelines do not cover something, the notebook will say so rather than guess. Take anything important to your doctor.",
+            "Jika garis panduan tidak meliputi sesuatu, buku nota akan menyatakannya dan bukan meneka. Bawa apa-apa yang penting kepada doktor anda."
+          ))}</span>
+        </div>
+      </div>
+
+      {/* Starter questions — tap to copy, then paste into the notebook */}
+      <div style={{ marginTop: 16 }}>
+        <p className="small" style={{ fontWeight: 700, marginBottom: 7 }}>
+          💡 {tr(L("Questions you could paste in", "Soalan yang boleh anda tampal"))}
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+          {NOTEBOOK_ASKS.map((ask, i) => (
+            <button key={i} className="nb-ask" onClick={() => copyAsk(tr(ask), i)}>
+              {copied === i ? `✓ ${tr(L("Copied", "Disalin"))}` : tr(ask)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Limits — stated plainly, because this is a patient-facing AI tool */}
+      <div className="flag" style={{ marginTop: 16 }}>
+        {tr(L(
+          "ℹ️ NotebookLM is a Google product and sits outside this app. It is grounded in the guidelines, which greatly reduces invented answers, but it is still AI-generated and is not a clinical consultation. It does not know your family history and cannot see anything you entered here. Confirm anything that matters with your doctor.",
+          "ℹ️ NotebookLM ialah produk Google dan berada di luar aplikasi ini. Ia berpaut pada garis panduan, yang banyak mengurangkan jawapan yang dicipta, tetapi ia masih dijana AI dan bukan konsultasi klinikal. Ia tidak mengetahui sejarah keluarga anda dan tidak dapat melihat apa-apa yang anda masukkan di sini. Sahkan apa-apa yang penting dengan doktor anda."
         ))}
       </div>
 
-      {/* Chat history */}
-      {messages.length > 0 && (
-        <div className="cpg-messages" style={{ maxHeight: 320, overflowY: "auto", marginBottom: 12 }}>
-          {messages.map((m, i) => (
-            <div key={i} className={`cpg-msg cpg-${m.role}`}>
-              <span className="cpg-role">{m.role === "user" ? "🧑" : "🤖"}</span>
-              <div className="cpg-bubble">{m.text}</div>
-            </div>
-          ))}
-          {loading && (
-            <div className="cpg-msg cpg-assistant">
-              <span className="cpg-role">🤖</span>
-              <div className="cpg-bubble cpg-loading">{tr(L("Searching guidelines…", "Mencari garis panduan…"))}</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Input */}
-      <div style={{ display: "flex", gap: 8 }}>
-        <input type="text" value={q} onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && askCpg()}
-          placeholder={tr(L("Type your question…", "Taip soalan anda…"))}
-          style={{ flex: 1 }} disabled={loading} />
-        <button className="btn primary" onClick={askCpg} disabled={!q.trim() || loading}
-          style={{ padding: "12px 18px", ...(!q.trim() || loading ? { opacity: .5 } : {}) }}>
-          {loading ? "…" : "→"}
-        </button>
-      </div>
-
-      {/* CPG Reference links */}
+      {/* CPG reference links */}
       <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px dashed var(--line)" }}>
         <p className="small" style={{ fontWeight: 700, marginBottom: 6 }}>
           📚 {tr(L("Malaysian CPG references", "Rujukan CPG Malaysia"))}
@@ -1296,6 +1314,316 @@ INSTRUCTIONS:
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Public-level awareness quiz                                         */
+/* ------------------------------------------------------------------ */
+/* Deliberately set at a level the general public can answer: one idea */
+/* per question, everyday wording, no clinical jargon in the stem.     */
+/* Every answer and explanation is taken from the same anchored        */
+/* sources as the result cards — nothing new is introduced here, so    */
+/* the quiz can never contradict the plan the app gives.              */
+/* A companion NotebookLM quiz artifact (grounded in the same CPGs)    */
+/* is linked at the end: QUIZ_NOTEBOOK_URL.                           */
+/* ------------------------------------------------------------------ */
+const QUIZ = [
+  {
+    q: L(
+      "Your mother was diagnosed with breast cancer at 45. What does that mean for you?",
+      "Ibu anda didiagnos kanser payudara pada umur 45. Apa maksudnya bagi anda?"
+    ),
+    options: [
+      L("Nothing — cancer is never passed down in families", "Tiada apa — kanser tidak pernah diwarisi dalam keluarga"),
+      L("You may need to start screening earlier than the general public", "Anda mungkin perlu mula saringan lebih awal daripada orang awam"),
+      L("You will definitely get breast cancer too", "Anda pasti akan mendapat kanser payudara juga"),
+      L("You should start cancer treatment now, just in case", "Anda patut mula rawatan kanser sekarang, untuk berjaga-jaga"),
+    ],
+    correct: 1,
+    why: L(
+      "A close relative diagnosed young can mean you carry a higher inherited risk. That usually changes when screening starts and which test is used — sometimes years earlier than for everyone else. It does not mean you will get cancer, and it is not a reason for treatment.",
+      "Saudara terdekat yang didiagnos pada usia muda boleh bermakna anda membawa risiko warisan yang lebih tinggi. Ini biasanya mengubah bila saringan bermula dan ujian mana digunakan — kadangkala bertahun lebih awal daripada orang lain. Ia tidak bermakna anda akan mendapat kanser, dan ia bukan sebab untuk rawatan."
+    ),
+    src: SOURCE_BREAST,
+  },
+  {
+    q: L(
+      "In Malaysia, at what age does routine bowel (colorectal) cancer screening usually begin for someone with no family history?",
+      "Di Malaysia, pada umur berapa saringan kanser usus (kolorektal) rutin biasanya bermula bagi seseorang tanpa sejarah keluarga?"
+    ),
+    options: [L("30", "30"), L("40", "40"), L("50", "50"), L("65", "65")],
+    correct: 2,
+    why: L(
+      "At average risk, screening starts at 50 and is repeated every year up to 75. With a strong family history it can start at 40 — or 10 years before the youngest case in the family, whichever comes first.",
+      "Pada risiko sederhana, saringan bermula umur 50 dan diulang setiap tahun hingga 75. Dengan sejarah keluarga yang kuat ia boleh mula umur 40 — atau 10 tahun sebelum kes termuda dalam keluarga, yang mana lebih awal."
+    ),
+    src: SOURCE_CRC,
+  },
+  {
+    q: L(
+      "What is the first bowel cancer screening test most people are offered?",
+      "Apakah ujian saringan kanser usus pertama yang ditawarkan kepada kebanyakan orang?"
+    ),
+    options: [
+      L("A colonoscopy (camera test) for everyone", "Kolonoskopi (ujian kamera) untuk semua orang"),
+      L("A simple stool test (iFOBT)", "Ujian najis mudah (iFOBT)"),
+      L("A blood test that detects cancer", "Ujian darah yang mengesan kanser"),
+      L("An X-ray of the tummy", "X-ray perut"),
+    ],
+    correct: 1,
+    why: L(
+      "Screening starts with iFOBT — a simple stool test you can do at home or at the clinic. Only if it is positive are you referred for a colonoscopy. There is no routine blood test that screens for bowel cancer.",
+      "Saringan bermula dengan iFOBT — ujian najis mudah yang boleh dibuat di rumah atau di klinik. Hanya jika positif anda dirujuk untuk kolonoskopi. Tiada ujian darah rutin yang menyaring kanser usus."
+    ),
+    src: SOURCE_CRC,
+  },
+  {
+    q: L(
+      "A woman aged 55 with no family history of breast cancer. How often is a mammogram usually offered?",
+      "Seorang wanita berumur 55 tanpa sejarah keluarga kanser payudara. Berapa kerap mamogram biasanya ditawarkan?"
+    ),
+    options: [
+      L("Every month", "Setiap bulan"),
+      L("Every year, without exception", "Setiap tahun, tanpa kecuali"),
+      L("Every 2 years", "Setiap 2 tahun"),
+      L("Only once in her lifetime", "Sekali sahaja sepanjang hayat"),
+    ],
+    correct: 2,
+    why: L(
+      "At average risk, a mammogram every 2 years from 50 to 74. Between 40 and 49 a woman may choose a yearly mammogram after discussing it with her doctor. A family history or a known gene change moves the plan earlier and makes it more frequent.",
+      "Pada risiko sederhana, mamogram setiap 2 tahun dari umur 50 hingga 74. Antara 40 dan 49, wanita boleh memilih mamogram setiap tahun selepas berbincang dengan doktor. Sejarah keluarga atau perubahan gen yang diketahui menjadikan pelan lebih awal dan lebih kerap."
+    ),
+    src: SOURCE_BREAST,
+  },
+  {
+    q: L(
+      "True or false: lung cancer only happens to smokers.",
+      "Benar atau salah: kanser paru-paru hanya berlaku kepada perokok."
+    ),
+    options: [L("True", "Benar"), L("False", "Salah")],
+    correct: 1,
+    why: L(
+      "False. Malaysia's 2025 lung cancer guidelines note one local study in which 60.3% of women with lung cancer had never smoked. Other recognised risks include a close relative with lung cancer, second-hand smoke, past TB or chronic lung disease, air pollution, asbestos, silica and indoor smoke from wood or charcoal cooking.",
+      "Salah. Garis panduan kanser paru-paru Malaysia 2025 mencatatkan satu kajian tempatan di mana 60.3% wanita dengan kanser paru-paru tidak pernah merokok. Risiko lain yang diiktiraf termasuk saudara terdekat dengan kanser paru-paru, asap rokok orang lain, TB lampau atau penyakit paru-paru kronik, pencemaran udara, asbestos, silika dan asap dalam rumah daripada memasak dengan kayu atau arang."
+    ),
+    src: SOURCE_LUNG,
+  },
+  {
+    q: L(
+      "Malaysia's 2025 lung cancer guidelines offer a low-dose CT scan to which group?",
+      "Garis panduan kanser paru-paru Malaysia 2025 menawarkan imbasan CT dos rendah kepada kumpulan yang mana?"
+    ),
+    options: [
+      L("Everyone over 30", "Semua orang berumur lebih 30"),
+      L("People aged 45–75 who have smoked for 20 years or more", "Mereka berumur 45–75 tahun yang telah merokok 20 tahun atau lebih"),
+      L("Only people who are already coughing up blood", "Hanya mereka yang sudah batuk darah"),
+      L("Nobody — there is no lung screening in Malaysia", "Tiada sesiapa — tiada saringan paru-paru di Malaysia"),
+    ],
+    correct: 1,
+    why: L(
+      "Screening is offered at ages 45–75 after 20 or more years of smoking, whether you still smoke or have stopped. It is also recommended for people over 40 who have a parent, brother, sister or child with lung cancer, even if they never smoked. The test is a low-dose CT scan — a plain chest X-ray is not equivalent.",
+      "Saringan ditawarkan pada umur 45–75 selepas 20 tahun atau lebih merokok, sama ada anda masih merokok atau sudah berhenti. Ia juga disyorkan bagi mereka berumur lebih 40 tahun yang mempunyai ibu, bapa, adik-beradik atau anak dengan kanser paru-paru, walaupun tidak pernah merokok. Ujiannya ialah imbasan CT dos rendah — X-ray dada biasa bukan setara."
+    ),
+    src: SOURCE_LUNG,
+  },
+  {
+    q: L(
+      "What causes almost all cervical cancer?",
+      "Apakah yang menyebabkan hampir semua kanser serviks?"
+    ),
+    options: [
+      L("Long-lasting infection with the HPV virus", "Jangkitan berpanjangan virus HPV"),
+      L("Eating too much spicy food", "Makan terlalu banyak makanan pedas"),
+      L("Stress and lack of sleep", "Tekanan dan kurang tidur"),
+      L("Wearing tight clothing", "Memakai pakaian ketat"),
+    ],
+    correct: 0,
+    why: L(
+      "Nearly all cervical cancer follows a long-lasting HPV infection, which spreads through sexual contact. That is why the HPV vaccine — free for schoolgirls in Malaysia — prevents most cases. Important: the vaccine does not replace screening. Vaccinated women still need a Pap smear or HPV test.",
+      "Hampir semua kanser serviks berlaku selepas jangkitan HPV berpanjangan, yang merebak melalui hubungan seks. Itulah sebabnya vaksin HPV — percuma untuk pelajar perempuan sekolah di Malaysia — mencegah kebanyakan kes. Penting: vaksin tidak menggantikan saringan. Wanita yang divaksin masih perlu Pap smear atau ujian HPV."
+    ),
+    src: SOURCE_CERV,
+  },
+  {
+    q: L(
+      "Is there a routine screening test for nose-and-throat cancer (NPC) in Malaysia?",
+      "Adakah terdapat ujian saringan rutin untuk kanser hidung dan tekak (NPC) di Malaysia?"
+    ),
+    options: [
+      L("Yes — a yearly blood test for everyone", "Ya — ujian darah setiap tahun untuk semua orang"),
+      L("No — so acting early on the warning signs is what matters", "Tidak — jadi bertindak awal pada tanda amaran yang penting"),
+      L("Yes — a yearly scan of the head and neck", "Ya — imbasan kepala dan leher setiap tahun"),
+    ],
+    correct: 1,
+    why: L(
+      "Malaysia's 2016 NPC guideline reviewed screening people with no symptoms and found the evidence too weak to recommend it. What matters is acting fast on the warning signs — a lump in the neck, a blocked or bloody nose, one-sided hearing loss or ringing — which should be referred to an ENT specialist as soon as possible.",
+      "Garis panduan NPC Malaysia 2016 menilai saringan orang tanpa simptom dan mendapati buktinya terlalu lemah untuk disyorkan. Yang penting ialah bertindak cepat pada tanda amaran — ketulan di leher, hidung tersumbat atau berdarah, hilang pendengaran atau berdesing sebelah — yang patut dirujuk kepada pakar ENT secepat mungkin."
+    ),
+    src: SOURCE_NPC,
+  },
+];
+
+function quizBand(score, total) {
+  const pct = score / total;
+  if (pct >= 0.85) {
+    return {
+      ico: "🌟",
+      h: L("Excellent — you know the basics well.", "Cemerlang — anda tahu asasnya dengan baik."),
+      p: L(
+        "You could explain most of this to your own family, which is exactly how screening messages spread. Now put it to work on your own family history.",
+        "Anda boleh menerangkan sebahagian besar perkara ini kepada keluarga sendiri, dan itulah cara mesej saringan tersebar. Sekarang gunakannya pada sejarah keluarga anda."
+      ),
+    };
+  }
+  if (pct >= 0.5) {
+    return {
+      ico: "👍",
+      h: L("Good — a few gaps worth closing.", "Bagus — ada beberapa jurang yang patut ditutup."),
+      p: L(
+        "Most people miss the same ones: the starting ages, and the fact that a family history moves them earlier. The check itself will spell out what applies to you.",
+        "Kebanyakan orang tersilap pada perkara yang sama: umur mula, dan hakikat bahawa sejarah keluarga menjadikannya lebih awal. Semakan itu sendiri akan menjelaskan apa yang berkaitan dengan anda."
+      ),
+    };
+  }
+  return {
+    ico: "📚",
+    h: L("Worth a closer look — and that is the point.", "Patut diteliti lagi — dan itulah tujuannya."),
+    p: L(
+      "None of this is common knowledge, which is why cancer is still found late in Malaysia. Every answer above comes from the same guidelines this app uses, so the check will walk you through what matters for you.",
+      "Semua ini bukan pengetahuan umum, dan itulah sebabnya kanser masih dikesan lewat di Malaysia. Setiap jawapan di atas datang daripada garis panduan yang sama digunakan aplikasi ini, jadi semakan akan membimbing anda tentang apa yang penting untuk anda."
+    ),
+  };
+}
+
+function PublicQuiz({ lang, onStartCheck }) {
+  const tr = (v) => pick(v, lang);
+  const [i, setI] = useState(0);
+  const [picked, setPicked] = useState(null);   // index chosen for the current question
+  const [answers, setAnswers] = useState([]);   // one boolean per answered question
+  const [done, setDone] = useState(false);
+
+  const total = QUIZ.length;
+  const item = QUIZ[i];
+  const score = answers.filter(Boolean).length;
+
+  const choose = (idx) => {
+    if (picked !== null) return;                // one attempt per question
+    setPicked(idx);
+    setAnswers((a) => [...a, idx === item.correct]);
+  };
+
+  const next = () => {
+    if (i + 1 >= total) { setDone(true); return; }
+    setI(i + 1);
+    setPicked(null);
+  };
+
+  const restart = () => { setI(0); setPicked(null); setAnswers([]); setDone(false); };
+
+  if (done) {
+    const band = quizBand(score, total);
+    return (
+      <div className="card qzcard">
+        <p className="eyebrow">{tr(L("Quiz result", "Keputusan kuiz"))}</p>
+        <div className="qz-score">
+          <div className="qz-ring"><b>{score}/{total}</b></div>
+          <h2 style={{ marginBottom: 6 }}>{band.ico} {tr(band.h)}</h2>
+          <p className="muted small">{tr(band.p)}</p>
+        </div>
+
+        <div className="qz-review">
+          {QUIZ.map((qi, n) => (
+            <div className="qz-rev-row" key={n}>
+              <span className="qz-tick">{answers[n] ? "✅" : "❌"}</span>
+              <span>
+                <b style={{ display: "block", fontWeight: 700 }}>{tr(qi.q)}</b>
+                <span className="muted">
+                  {tr(L("Answer", "Jawapan"))}: {tr(qi.options[qi.correct])}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="row" style={{ marginTop: 18 }}>
+          <button className="btn ghost" onClick={restart}>{tr(L("Try again", "Cuba lagi"))}</button>
+          <button className="btn primary" onClick={onStartCheck}>
+            {tr(L("Start the check", "Mula semakan"))} →
+          </button>
+        </div>
+
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px dashed var(--line)" }}>
+          <a href={QUIZ_NOTEBOOK_URL} target="_blank" rel="noopener noreferrer"
+            className="chip" style={{ fontSize: 12, textDecoration: "none", color: "var(--teal-d)" }}>
+            🔗 {tr(L("Longer quiz in NotebookLM (grounded in the CPGs)", "Kuiz lebih panjang dalam NotebookLM (berpaut pada CPG)"))}
+          </a>
+        </div>
+
+        <div className="disclaimer">
+          <span>ℹ️</span>
+          <span>{tr(L(
+            "This quiz is for awareness only. It is not a risk assessment, not medical advice and not a diagnosis. Your score says nothing about your own chance of cancer.",
+            "Kuiz ini untuk kesedaran sahaja. Ia bukan penilaian risiko, bukan nasihat perubatan dan bukan diagnosis. Skor anda tidak menunjukkan apa-apa tentang kemungkinan kanser anda sendiri."
+          ))}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const gotIt = picked === item.correct;
+
+  return (
+    <div className="card qzcard">
+      <p className="eyebrow">{tr(L("Quick quiz", "Kuiz pantas"))}</p>
+      <div className="qz-prog">
+        <span className="qz-track"><span className="qz-fill" style={{ width: `${(i / total) * 100}%` }} /></span>
+        <span className="qz-count">{tr(L("Question", "Soalan"))} {i + 1}/{total}</span>
+      </div>
+
+      <p className="qz-q">{tr(item.q)}</p>
+
+      <div className="qz-opts">
+        {item.options.map((opt, idx) => {
+          let state = "";
+          if (picked !== null) {
+            if (idx === item.correct) state = " right";
+            else if (idx === picked) state = " wrong";
+          }
+          return (
+            <button key={idx} className={"qz-opt" + state} onClick={() => choose(idx)} disabled={picked !== null}>
+              <span className="qz-key">{String.fromCharCode(65 + idx)}</span>
+              <span>{tr(opt)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {picked !== null && (
+        <>
+          <div className={"qz-why" + (gotIt ? "" : " miss")}>
+            <div className="qz-verdict">
+              {gotIt ? `✅ ${tr(L("Correct", "Betul"))}` : `❌ ${tr(L("Not quite", "Kurang tepat"))}`}
+            </div>
+            <p>{tr(item.why)}</p>
+            <p className="qz-src">📚 {tr(L("Source", "Sumber"))}: {item.src}</p>
+          </div>
+          <button className="btn primary block" style={{ marginTop: 14 }} onClick={next}>
+            {i + 1 >= total
+              ? `${tr(L("See my score", "Lihat skor saya"))} →`
+              : `${tr(L("Next question", "Soalan seterusnya"))} →`}
+          </button>
+        </>
+      )}
+
+      {picked === null && i === 0 && (
+        <p className="muted small" style={{ marginTop: 14, marginBottom: 0 }}>
+          {tr(L(
+            "Eight questions, about three minutes. There is no pass mark — every answer is explained, with the Malaysian guideline it comes from.",
+            "Lapan soalan, kira-kira tiga minit. Tiada markah lulus — setiap jawapan diterangkan, dengan garis panduan Malaysia sumbernya."
+          ))}
+        </p>
+      )}
+    </div>
+  );
+}
 /* ------------------------------------------------------------------ */
 /* Labelled numbered stepper (clearer journey)                         */
 /* ------------------------------------------------------------------ */
@@ -1997,7 +2325,7 @@ export default function FamilyCancerRiskAssistant() {
   const [showEmg, setShowEmg] = useState(false);
   const [entered, setEntered] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [panel, setPanel] = useState(null); // null | "faq" | "registry" | "chat" — landing-hub sub-views
+  const [panel, setPanel] = useState(null); // null | "faq" | "registry" | "quiz" | "notebook" — landing-hub sub-views
 
   const [profile, setProfile] = useState({
     age: "", sex: "", ethnicity: "", state: "", everSex: "", smoke: "", smoke20y: false,
@@ -2124,11 +2452,18 @@ export default function FamilyCancerRiskAssistant() {
                   <span className="hs">{tr(L("National Cancer Registry snapshot", "Ringkasan Pendaftaran Kanser Kebangsaan"))}</span>
                 </span>
               </button>
-              <button className="hubtile" onClick={() => setPanel("chat")}>
-                <span className="hi">💬</span>
+              <button className="hubtile" onClick={() => setPanel("quiz")}>
+                <span className="hi">🧠</span>
+                <span className="htx">
+                  <span className="ht">{tr(L("Quick quiz", "Kuiz pantas"))}</span>
+                  <span className="hs">{tr(L("8 questions, 3 minutes — how much do you already know?", "8 soalan, 3 minit — berapa banyak anda sudah tahu?"))}</span>
+                </span>
+              </button>
+              <button className="hubtile" onClick={() => setPanel("notebook")}>
+                <span className="hi">📓</span>
                 <span className="htx">
                   <span className="ht">{tr(L("Ask the guidelines", "Tanya garis panduan"))}</span>
-                  <span className="hs">{tr(L("Chat about Malaysian cancer CPGs", "Bualan tentang CPG kanser Malaysia"))}</span>
+                  <span className="hs">{tr(L("A NotebookLM grounded only in the Malaysian CPGs", "NotebookLM yang berpaut hanya pada CPG Malaysia"))}</span>
                 </span>
               </button>
             </div>
@@ -2187,13 +2522,23 @@ export default function FamilyCancerRiskAssistant() {
           </>
         )}
 
-        {/* STEP 0 — Guideline chat panel */}
-        {step === 0 && panel === "chat" && (
+        {/* STEP 0 — Public awareness quiz */}
+        {step === 0 && panel === "quiz" && (
           <>
             <div className="panelhead">
               <button className="btn ghost" onClick={() => setPanel(null)}>← {tr(L("Back", "Kembali"))}</button>
             </div>
-            <CpgChat results={results} profile={profile} relatives={relatives} lang={lang} />
+            <PublicQuiz lang={lang} onStartCheck={() => { setPanel(null); setStep(1); }} />
+          </>
+        )}
+
+        {/* STEP 0 — Guideline notebook panel (NotebookLM, CPG-grounded) */}
+        {step === 0 && panel === "notebook" && (
+          <>
+            <div className="panelhead">
+              <button className="btn ghost" onClick={() => setPanel(null)}>← {tr(L("Back", "Kembali"))}</button>
+            </div>
+            <CpgNotebook lang={lang} />
           </>
         )}
 
@@ -2526,8 +2871,8 @@ export default function FamilyCancerRiskAssistant() {
               <p className="small muted">{tr(CONSTITUTIONAL)}</p>
             </div>
 
-            {/* AI CPG Q&A */}
-            <CpgChat results={results} profile={profile} relatives={relatives} lang={lang} />
+            {/* Ask the CPGs — CPG-grounded NotebookLM, replaces the old free-text chat */}
+            <CpgNotebook lang={lang} />
 
             <div className="card">
               <div className="row">
