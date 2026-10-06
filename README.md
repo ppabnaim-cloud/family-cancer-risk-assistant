@@ -14,9 +14,105 @@ snapshot.
 
 ## Data handling
 
-Session-only. No name, IC, phone number or contact detail is ever collected
-(PDPA-minimised). Nothing is stored or transmitted except the anonymous
-feedback form, which carries no personal or health data.
+**Two modes, controlled by a flag.** With collection off (the default) the app
+is session-only and stores nothing. With collection on it takes explicit consent
+and stores a **pseudonymised** record. The entire data model lives in one
+auditable file, [`src/collection.js`](src/collection.js), so an ethics reviewer
+does not have to read the UI component to see what leaves the device.
+
+### Governance position
+
+The data controller is **IKN / KKM**, part of the Federal Government. PDPA 2010
+**s.3(1) exempts the Federal and State Governments**, so the Act does not legally
+bind this collection. What governs it instead:
+
+- **MREC approval via NMRR** — the gate on go-live
+- MOH data-security and classification directives
+- Medical confidentiality
+
+PDPA standards are nonetheless applied **voluntarily as the design floor**, and
+the consent screen says so in those words. Health information is treated as
+"sensitive personal data" in the PDPA s.4 sense throughout, because that is the
+stricter and more defensible standard. Do not reword this to claim the PDPA
+*binds* the collection — it does not, and an ethics reviewer will notice.
+
+### The pseudonymisation split
+
+The app produces two outputs with opposite requirements, and they are kept apart:
+
+| Output | Carries | Leaves the device? |
+|---|---|---|
+| Printed summary for Klinik Kesihatan | Name, IC (optional), participant code | **No.** Rendered in-browser, printed. Never transmitted. |
+| Research record | Participant code + banded variables | Yes, to the Google Sheet |
+
+The only link between the two is the participant code **on the paper in the
+patient's hand**. There is no re-identification key on any server, by design.
+This is also what makes withdrawal possible: a participant who quotes their code
+can have their row deleted, and nobody else can find it.
+
+If follow-up or recall is ever required, that is a protocol amendment and a
+different store. Do not bolt a contact field onto this one.
+
+### What is collected
+
+Exactly the 28 fields in `RESEARCH_FIELDS`, and nothing else — it is an
+allowlist, not a filter, so a new profile field cannot leak by accident. Exact
+age is **banded before it leaves the device**: a rare cancer plus a specific
+ethnicity plus a small state is re-identifying even with no name attached, so
+every quasi-identifier is kept deliberately coarse.
+
+Never collected: name, IC/MyKad, phone, email, address, exact age, date of
+birth, free text, IP address, device identifier. `api/submit.js` **refuses**
+a record carrying any of those keys rather than quietly stripping them.
+
+### Enabling collection
+
+Two flags, both default off. `VITE_COLLECT_ENABLED` controls the UI;
+`COLLECTION_ENABLED` is what actually authorises a write, and the server refuses
+every request without it — a tampered front end cannot bypass that gate.
+
+Before go-live:
+
+1. MREC/NMRR approval granted, and the reference set in `VITE_NMRR_ID` /
+   `VITE_MREC_REF`. The consent screen shows a visible warning until it is.
+2. `VITE_DATA_CONTACT` set to a monitored address — it is the withdrawal route.
+3. Sheet created in an **institutional Google Workspace account**, link-sharing
+   off, shared only with the service account.
+4. Header row pasted into row 1, in this exact order:
+
+```
+submitted_at	participant_code	app_version	consent_version	language	age_band	sex	ethnicity	state	ever_sexually_active	smoking	smoked_20y	passive_smoke	occupational_hazards	relatives_encoded	n_relatives	n_first_degree	n_second_degree	any_relative_under_50	genetics	risk_colorectal	risk_breast	risk_lung	risk_cervical	risk_npc	symptoms_flagged	n_symptoms_flagged	any_red_flag
+```
+
+5. Service account created with **Editor on that one sheet only** — share the
+   sheet with its email address; do not grant Drive-wide scope.
+6. Retention period agreed and `VITE_RETENTION_YEARS` set to match what the
+   consent screen promises.
+
+### A standing caution on Google Sheets
+
+Sheets is defensible for a **pseudonymised feasibility dataset** and little
+beyond it. It gives no row-level read audit trail, one mis-click on "Anyone with
+the link" is a disclosure, the service-account key grants full read/write to
+whoever holds it, and the data sits on foreign infrastructure. If the dataset
+ever becomes identifiable, it needs a different store — not tighter sharing
+settings on this one.
+
+### Known limitation: no rate limiting
+
+`/api/submit` is a public endpoint with no rate limit — adding a real one needs
+a KV/Redis store this project does not have. Cross-origin browser POSTs are
+blocked by preflight (the endpoint sends no CORS headers), but a direct scripted
+POST could flood the sheet with junk rows and pollute the dataset.
+
+For a feasibility study at modest N this is a monitoring problem, not a
+build-stopper: watch the row count, and treat a burst of rows sharing a
+timestamp minute as suspect. If the study scales up, put a rate limit or a
+CAPTCHA in front of it before it matters.
+
+### Feedback form
+
+Separate and unchanged: `/api/feedback` carries no personal or health data.
 
 ## Guideline grounding
 
@@ -105,6 +201,8 @@ npx vercel dev
 Set in **Vercel → Settings → Environment Variables** (and `.env.local` for
 `vercel dev`). Never commit real values.
 
+See `.env.example` for the collection variables; the table below covers the rest.
+
 | Variable | Purpose |
 |---|---|
 | `EMAILJS_SERVICE_ID` | Feedback email |
@@ -125,6 +223,11 @@ Build command `npm run build`, output directory `dist`.
   **both** a source and a scope-narrowing flag (lung and cervical both do).
 - `L(en, bm)` wrapper for every user-facing string — clinical text included, not
   just UI chrome.
+- Privacy copy (`PRIVACY_HUB`, `PRIVACY_GATE`, `PRIVACY_REASON`) switches with
+  `COLLECTION_ENABLED`. The app must never promise something it is not doing —
+  never hard-code "nothing is saved" back into a site that collects.
+- Adding a field to `RESEARCH_FIELDS` needs an **ethics amendment**, not just a
+  commit, and must be changed in `src/collection.js` **and** `api/submit.js`.
 - New profile fields go in the `useState` init **and** `reset()` **and** (if
   clinically relevant) the `GpSummary` printable doc — all three.
 - Quiz answers cite a `SOURCE_X` constant, never a free-standing figure.
