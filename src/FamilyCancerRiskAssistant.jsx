@@ -2529,7 +2529,7 @@ function ConsentGate({ lang, onAccept, onDecline }) {
 /* ------------------------------------------------------------------ */
 /* Participant details — LOCAL ONLY, printed, never transmitted        */
 /* ------------------------------------------------------------------ */
-function ParticipantDetails({ patientId, setPatientId, participantCode, lang, submitState }) {
+function ParticipantDetails({ patientId, setPatientId, participantCode, lang, submitState, onGenerate }) {
   const tr = (v) => pick(v, lang);
   return (
     <div className="card idcard">
@@ -2572,6 +2572,17 @@ function ParticipantDetails({ patientId, setPatientId, participantCode, lang, su
           ))}</span>
         </div>
       )}
+
+      <button className="btn primary block" style={{ marginTop: 14 }} onClick={onGenerate}>
+        🖨️ {tr(L("Generate the summary for my doctor (GP)", "Jana ringkasan untuk doktor (GP) saya"))}
+      </button>
+      <div className="disclaimer">
+        <span>ℹ️</span>
+        <span>{tr(L(
+          "A printable sheet you can take to any GP or Klinik Kesihatan for action and opinion. It includes any warning signs you ticked above. It is not medical advice and not a diagnosis.",
+          "Helaian boleh cetak untuk dibawa ke mana-mana GP atau Klinik Kesihatan untuk tindakan dan pendapat. Ia termasuk tanda amaran yang anda tanda di atas. Ia bukan nasihat perubatan dan bukan diagnosis."
+        ))}</span>
+      </div>
 
       {submitState && (
         <div className={"subrow sub-" + submitState}>
@@ -3107,37 +3118,14 @@ export default function FamilyCancerRiskAssistant() {
                   "Bagi setiap kanser di bawah: tahap risiko, perlu jumpa doktor, ujian mana, berapa kerap, dan tanda untuk diperhatikan. Bawa ini kepada doktor anda."
                 ))}
               </p>
-              <button className="btn primary block" style={{ marginTop: 6 }}
-                onClick={() => {
-                  setShowSummary(true);
-                  /* Producing the clinic sheet is the study's "did they act?"
-                     signal, so flag it on the record that already exists.
-                     Fire-and-forget: a failure here must never block or delay
-                     the patient getting their sheet. */
-                  if (consent === "given" && participantCode && !summaryMarkedRef.current) {
-                    summaryMarkedRef.current = true;
-                    markSummaryGenerated(participantCode);
-                  }
-                }}>
-                🖨️ {tr(L("Generate a summary for my doctor (GP)", "Jana ringkasan untuk doktor (GP) saya"))}
-              </button>
               <div className="disclaimer">
-                <span>ℹ️</span>
+                <span>🖨️</span>
                 <span>{tr(L(
-                  "The summary is a printable sheet you can take to any GP for action and opinion. It is not medical advice and not a diagnosis.",
-                  "Ringkasan ialah helaian boleh cetak untuk dibawa ke mana-mana GP untuk tindakan dan pendapat. Ia bukan nasihat perubatan dan bukan diagnosis."
+                  "Work through the warning-sign check below first, then generate your printable sheet for the clinic at the end of this page. Ticking the signs first is what puts them on the sheet.",
+                  "Lengkapkan semakan tanda amaran di bawah dahulu, kemudian jana helaian bercetak untuk klinik di hujung halaman ini. Menanda tanda amaran dahulu yang meletakkannya pada helaian."
                 ))}</span>
               </div>
             </div>
-
-            {/* Name for the printout (local only) + study record status */}
-            <ParticipantDetails
-              patientId={patientId}
-              setPatientId={setPatientId}
-              participantCode={participantCode}
-              lang={lang}
-              submitState={submitState}
-            />
 
             {/* Family pedigree */}
             {relatives.length > 0 && (
@@ -3215,6 +3203,30 @@ export default function FamilyCancerRiskAssistant() {
               <h3 style={{ marginBottom: 8 }}>🩺 {tr(L("Also watch for these in anyone", "Perhatikan juga tanda umum ini"))}</h3>
               <p className="small muted">{tr(CONSTITUTIONAL)}</p>
             </div>
+
+            {/* Sheet for the clinic — LAST, so the symptom check and every
+                result card are already reflected in what gets printed. The GP
+                summary carries the red-flag symptoms; generating it before the
+                symptom check would hand the clinic a sheet missing exactly the
+                information it most needs. */}
+            <ParticipantDetails
+              patientId={patientId}
+              setPatientId={setPatientId}
+              participantCode={participantCode}
+              lang={lang}
+              submitState={submitState}
+              onGenerate={() => {
+                setShowSummary(true);
+                /* Producing the clinic sheet is the study's "did they act?"
+                   signal, so flag it on the record that already exists.
+                   Fire-and-forget: a failure here must never block or delay
+                   the patient getting their sheet. */
+                if (consent === "given" && participantCode && !summaryMarkedRef.current) {
+                  summaryMarkedRef.current = true;
+                  markSummaryGenerated(participantCode);
+                }
+              }}
+            />
 
             {/* Ask the CPGs — CPG-grounded NotebookLM, replaces the old free-text chat */}
             <CpgNotebook lang={lang} />
