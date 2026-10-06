@@ -67,6 +67,11 @@ a record carrying any of those keys rather than quietly stripping them.
 
 ### Enabling collection
 
+**[SETUP-COLLECTION.md](SETUP-COLLECTION.md) is the click-by-click guide** —
+service account, sharing, environment variables and how to prove it works. Start
+there. The summary below is the rationale behind it.
+
+
 Two flags, both default off. `VITE_COLLECT_ENABLED` controls the UI;
 `COLLECTION_ENABLED` is what actually authorises a write, and the server refuses
 every request without it — a tampered front end cannot bypass that gate.
