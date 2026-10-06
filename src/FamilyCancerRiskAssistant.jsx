@@ -1,4 +1,12 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import {
+  COLLECTION_ENABLED,
+  ETHICS,
+  makeParticipantCode,
+  buildResearchRecord,
+  submitResearchRecord,
+  markSummaryGenerated,
+} from "./collection";
 
 /**
  * Family Cancer Risk Assistant — Malaysia (Prototype)
@@ -27,8 +35,16 @@ import React, { useState, useMemo } from "react";
  *    screening schedule. Referral timeframe is "as soon as possible" (consensus,
  *    Rec 1), not a fixed week-count. NPC stays level:"info" (no risk tier).
  *
- * Data handling: session-only. No name / IC / phone / contact is ever collected
- * (PDPA-minimised). Nothing is stored or transmitted.
+ * Data handling: see src/collection.js, which holds the entire data model and
+ * the governance position in one auditable place.
+ *
+ * In brief: research collection is OFF unless VITE_COLLECT_ENABLED is "true",
+ * and the server enforces that independently. When it is on, the app takes
+ * explicit consent first, then stores a PSEUDONYMISED record — a random
+ * participant code plus banded variables, never a name, IC, contact detail or
+ * exact age. Identifiers entered for the printed clinic summary stay in browser
+ * memory and are never transmitted. Declining consent leaves the clinical tool
+ * fully usable.
  *
  * This tool supports clinical decision-making. It does not replace a doctor.
  */
@@ -247,6 +263,45 @@ const FLAG_NPC = L(
 /* Slogan                                                              */
 /* ------------------------------------------------------------------ */
 const SLOGAN = L("We are here to help", "Kami di sini untuk membantu");
+
+/* ------------------------------------------------------------------ */
+/* Privacy copy — switches with the collection mode                    */
+/* ------------------------------------------------------------------ */
+/* The app must never promise something it is not doing. When collection
+   is off it keeps the original "nothing is saved" promise. When it is on,
+   every one of these lines changes to state plainly that health data is
+   sensitive, that joining is optional, and that what is stored carries a
+   participant code rather than a name. Changing the flag changes the
+   promise everywhere at once — there is no path where the two disagree. */
+const PRIVACY_HUB = COLLECTION_ENABLED
+  ? L(
+      "🔐 Your information is sensitive — and treated that way. We never ask for your IC, phone or address. Joining the study is optional: if you agree, your answers are stored without your name under a participant code, to PDPA standards. A name you add for the clinic is printed on your sheet only and never leaves this device.",
+      "🔐 Maklumat anda sensitif — dan dilayan sedemikian. Kami tidak pernah meminta IC, telefon atau alamat anda. Menyertai kajian adalah pilihan: jika anda bersetuju, jawapan anda disimpan tanpa nama anda di bawah kod peserta, mengikut piawaian PDPA. Nama yang anda tambah untuk klinik dicetak pada helaian anda sahaja dan tidak pernah meninggalkan peranti ini."
+    )
+  : L(
+      "🔒 Private & free — we ask only age, sex, ethnicity and state. No name, IC or phone number. Nothing is saved; it disappears when you close this page.",
+      "🔒 Peribadi & percuma — kami tanya umur, jantina, etnik dan negeri sahaja. Tiada nama, IC atau nombor telefon. Tiada apa disimpan; semuanya hilang bila anda tutup halaman ini."
+    );
+
+const PRIVACY_GATE = COLLECTION_ENABLED
+  ? L(
+      "Information about your health and your family's health is sensitive personal data, and is handled as such. Nothing is collected unless you agree on the next screen. If you agree, your answers are stored without your name, under a participant code, and used only for this study. You may decline and still use every part of this tool.",
+      "Maklumat tentang kesihatan anda dan keluarga anda ialah data peribadi sensitif, dan dikendalikan sedemikian. Tiada apa dikumpul melainkan anda bersetuju pada skrin seterusnya. Jika anda bersetuju, jawapan anda disimpan tanpa nama anda, di bawah kod peserta, dan digunakan hanya untuk kajian ini. Anda boleh menolak dan masih menggunakan setiap bahagian alat ini."
+    )
+  : L(
+      "Do NOT enter patient-identifiable data (full name, IC number, phone). Nothing you enter is stored or transmitted — it stays in your browser and disappears when you close the page.",
+      "JANGAN masukkan data pengenalan pesakit (nama penuh, nombor IC, telefon). Tiada apa yang dimasukkan disimpan atau dihantar — ia kekal dalam pelayar anda dan hilang bila halaman ditutup."
+    );
+
+const PRIVACY_REASON = COLLECTION_ENABLED
+  ? L(
+      "We never ask for your IC, phone or address. Taking part in the study is optional, and what is stored carries a participant code, not your name. Free, and as often as you like.",
+      "Kami tidak pernah meminta IC, telefon atau alamat anda. Menyertai kajian adalah pilihan, dan apa yang disimpan membawa kod peserta, bukan nama anda. Percuma, dan seberapa kerap yang anda mahu."
+    )
+  : L(
+      "No name, no IC, no phone number. Nothing is saved. Use it as often as you like.",
+      "Tiada nama, tiada IC, tiada nombor telefon. Tiada apa disimpan. Guna seberapa kerap yang anda mahu."
+    );
 
 /* ------------------------------------------------------------------ */
 /* National Cancer Registry snapshot (data-visualisation source)       */
@@ -780,6 +835,30 @@ const CSS = `
 .fcra .nb-step .nbn { flex:none; width:22px; height:22px; border-radius:99px; background:var(--teal-soft); color:var(--teal-d); font-size:12px; font-weight:800; display:grid; place-items:center; }
 .fcra .nb-ask { border:1px solid #b9ded9; background:var(--teal-soft); color:var(--teal-d); border-radius:999px; padding:8px 13px; font:inherit; font-weight:600; font-size:12.5px; line-height:1.3; cursor:pointer; text-align:left; }
 .fcra .nb-ask:hover { background:#d2e8e5; }
+
+/* --- Consent / participant information ------------------------------*/
+.fcra .gate.consent { max-width:600px; }
+.fcra .gate.consent .gate-tag { background:var(--teal); color:#fff; }
+.fcra .consent-sensitive { background:var(--teal-soft); border:1px solid #b9ded9; border-radius:13px; padding:14px 16px; font-size:13.5px; line-height:1.55; color:var(--ink); margin:4px 0 16px; }
+.fcra .consent-h { font-size:13px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); margin:16px 0 7px; }
+.fcra .consent-list { margin:0; padding-left:22px; font-size:13.5px; line-height:1.5; color:var(--ink); }
+.fcra .consent-note { background:#fff8ec; border:1px solid #f0d79a; border-radius:13px; padding:13px 15px; font-size:13px; line-height:1.55; color:#6b4e12; margin:16px 0 14px; }
+.fcra .consent-ack { display:flex; gap:11px; align-items:flex-start; width:100%; text-align:left; border:1.5px solid var(--line); background:#fff; border-radius:13px; padding:13px 15px; font:inherit; font-size:14px; line-height:1.45; color:var(--ink); cursor:pointer; margin-top:6px; }
+.fcra .consent-ack.on { border-color:var(--teal); background:var(--teal-soft); color:var(--teal-d); font-weight:600; }
+.fcra .consent-ack .symbox { font-size:17px; flex:none; line-height:1.3; }
+
+/* --- Participant details (local-only identifiers) -------------------*/
+.fcra .idcard { border-top:4px solid var(--accent); }
+.fcra .idlocal { background:var(--green-soft); border:1px solid #b6ddc8; border-radius:12px; padding:11px 13px; font-size:12.5px; line-height:1.5; color:#1c6644; margin-top:2px; }
+.fcra .idcode { display:flex; flex-direction:column; gap:3px; background:var(--teal-soft); border:1px solid #b9ded9; border-radius:13px; padding:13px 15px; margin-top:12px; }
+.fcra .idcode-l { font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.fcra .idcode b { font-size:21px; font-weight:800; letter-spacing:.06em; color:var(--teal-d); font-variant-numeric:tabular-nums; }
+.fcra .idcode-n { font-size:12px; color:var(--muted); line-height:1.45; }
+.fcra .subrow { border-radius:12px; padding:11px 13px; font-size:13px; line-height:1.5; margin-top:12px; }
+.fcra .subrow.sub-sending { background:#f6f8f7; color:var(--muted); font-style:italic; }
+.fcra .subrow.sub-sent { background:var(--green-soft); border:1px solid #b6ddc8; color:#1c6644; font-weight:600; }
+.fcra .subrow.sub-error { background:var(--amber-soft); border:1px solid #f0d79a; color:#8a5a10; font-weight:600; }
+.fcra .subrow.sub-declined { background:#f6f8f7; color:var(--muted); }
 
 /* --- Public awareness quiz ------------------------------------------*/
 .fcra .qzcard { border-top:4px solid var(--accent); }
@@ -1955,7 +2034,7 @@ function FeedbackForm({ results, lang, onSkip, onDone }) {
 /* ------------------------------------------------------------------ */
 /* GP summary — printable sheet the patient brings to their doctor     */
 /* ------------------------------------------------------------------ */
-function GpSummary({ results, profile, relatives, symptoms, lang, cancerMeta, onClose }) {
+function GpSummary({ results, profile, relatives, symptoms, lang, cancerMeta, patientId, participantCode, onClose }) {
   const tr = (v) => pick(v, lang);
   const today = new Date().toLocaleDateString(lang === "bm" ? "ms-MY" : "en-GB", {
     day: "numeric", month: "long", year: "numeric",
@@ -1987,9 +2066,30 @@ function GpSummary({ results, profile, relatives, symptoms, lang, cancerMeta, on
           ))}
         </div>
 
+        {/* Identifiers — printed here ONLY. These are held in browser memory
+            for this session and are never transmitted; see src/collection.js. */}
+        {(patientId?.name || patientId?.ic || participantCode) && (
+          <div className="summary-sec">
+            <h3>{tr(L("This sheet belongs to", "Helaian ini milik"))}</h3>
+            <div className="summary-kv">
+              {patientId?.name && <div><span>{tr(L("Name", "Nama"))}: </span><b>{patientId.name}</b></div>}
+              {patientId?.ic && <div><span>{tr(L("IC / MyKad", "IC / MyKad"))}: </span><b>{patientId.ic}</b></div>}
+              {participantCode && <div><span>{tr(L("Participant code", "Kod peserta"))}: </span><b>{participantCode}</b></div>}
+            </div>
+            {participantCode && (
+              <p className="small muted" style={{ margin: "8px 0 0" }}>
+                {tr(L(
+                  "Keep this code. It is the only way to have your anonymous study record removed later.",
+                  "Simpan kod ini. Ia satu-satunya cara untuk membuang rekod kajian tanpa nama anda kemudian."
+                ))}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Profile */}
         <div className="summary-sec">
-          <h3>{tr(L("Person (self-reported, no identifiers)", "Individu (dilaporkan sendiri, tanpa pengecam)"))}</h3>
+          <h3>{tr(L("Person (self-reported)", "Individu (dilaporkan sendiri)"))}</h3>
           <div className="summary-kv">
             <div><span>{tr(L("Age", "Umur"))}: </span>{profile.age || "—"}</div>
             <div><span>{tr(L("Sex", "Jantina"))}: </span>{sexLabel}</div>
@@ -2172,10 +2272,7 @@ function WhyUse({ lang }) {
     {
       ico: "🔒",
       t: L("Private and free", "Peribadi dan percuma"),
-      b: L(
-        "No name, no IC, no phone number. Nothing is saved. Use it as often as you like.",
-        "Tiada nama, tiada IC, tiada nombor telefon. Tiada apa disimpan. Guna seberapa kerap yang anda mahu."
-      ),
+      b: PRIVACY_REASON,
     },
   ];
   return (
@@ -2317,6 +2414,178 @@ function RegistrySnapshot({ lang }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Participant information sheet + consent                             */
+/* ------------------------------------------------------------------ */
+/* Shown ONCE, before any data is entered, and only when collection is */
+/* switched on. This is a consent step, not a disclaimer: a disclaimer */
+/* tells people something, consent asks them. Declining is a first-    */
+/* class outcome — the clinical tool stays fully usable either way,    */
+/* which is an ethics requirement, not a courtesy.                     */
+/* ------------------------------------------------------------------ */
+function ConsentGate({ lang, onAccept, onDecline }) {
+  const tr = (v) => pick(v, lang);
+  const [ack, setAck] = useState(false);
+  const approvalKnown = Boolean(ETHICS.nmrrId || ETHICS.mrecRef);
+
+  const Collected = ({ children }) => (
+    <li style={{ marginBottom: 4 }}>{children}</li>
+  );
+
+  return (
+    <div className="gate-bg">
+      <div className="gate consent">
+        <span className="gate-tag">{tr(L("RESEARCH STUDY · YOUR CHOICE", "KAJIAN PENYELIDIKAN · PILIHAN ANDA"))}</span>
+        <div className="gate-title">{tr(L("Would you like to take part?", "Adakah anda ingin menyertai?"))}</div>
+        <p className="gate-by">{ETHICS.controller}</p>
+
+        <p className="gate-p">
+          {tr(L(
+            "This is a feasibility study looking at whether this tool helps families understand their cancer risk and act on it earlier. Taking part means your answers are added, without your name, to a study record.",
+            "Ini kajian kebolehlaksanaan untuk melihat sama ada alat ini membantu keluarga memahami risiko kanser dan bertindak lebih awal. Menyertainya bermakna jawapan anda ditambah, tanpa nama anda, ke dalam rekod kajian."
+          ))}
+        </p>
+
+        {/* Sensitive-data statement — the heart of the consent */}
+        <div className="consent-sensitive">
+          <b>🔐 {tr(L("Your health information is sensitive.", "Maklumat kesihatan anda adalah sensitif."))}</b>{" "}
+          {tr(L(
+            "Information about your health and your family's health is treated as sensitive personal data. Although Malaysia's PDPA 2010 does not legally bind government bodies, this study applies PDPA standards in full as its minimum, because that is the stricter and safer standard. Records are held in an access-controlled institutional account, used only for this study, and destroyed after the retention period below.",
+            "Maklumat tentang kesihatan anda dan keluarga anda dianggap sebagai data peribadi sensitif. Walaupun PDPA 2010 Malaysia tidak mengikat badan kerajaan dari segi undang-undang, kajian ini menerapkan piawaian PDPA sepenuhnya sebagai minimum, kerana itu piawaian yang lebih ketat dan selamat. Rekod disimpan dalam akaun institusi yang dikawal akses, digunakan hanya untuk kajian ini, dan dimusnahkan selepas tempoh penyimpanan di bawah."
+          ))}
+        </div>
+
+        <p className="consent-h">✅ {tr(L("What is recorded", "Apa yang direkodkan"))}</p>
+        <ul className="consent-list">
+          <Collected>{tr(L("Your age group — not your exact age", "Kumpulan umur anda — bukan umur tepat"))}</Collected>
+          <Collected>{tr(L("Sex, ethnicity and state", "Jantina, etnik dan negeri"))}</Collected>
+          <Collected>{tr(L("Smoking and workplace exposure answers", "Jawapan merokok dan pendedahan tempat kerja"))}</Collected>
+          <Collected>{tr(L("Which relatives had which cancer, and their age group", "Saudara mana menghidap kanser apa, dan kumpulan umur mereka"))}</Collected>
+          <Collected>{tr(L("Inherited conditions and warning signs you ticked", "Keadaan keturunan dan tanda amaran yang anda tanda"))}</Collected>
+          <Collected>{tr(L("The risk levels the tool produced", "Tahap risiko yang dihasilkan alat ini"))}</Collected>
+        </ul>
+
+        <p className="consent-h">🚫 {tr(L("What is never recorded", "Apa yang tidak pernah direkodkan"))}</p>
+        <ul className="consent-list">
+          <Collected>{tr(L("Your name, IC/MyKad, phone number, email or address", "Nama, IC/MyKad, nombor telefon, e-mel atau alamat anda"))}</Collected>
+          <Collected>{tr(L("Your exact age or date of birth", "Umur tepat atau tarikh lahir anda"))}</Collected>
+          <Collected>
+            <b>{tr(L("Your name on the printed summary stays on your device.", "Nama anda pada ringkasan bercetak kekal pada peranti anda."))}</b>{" "}
+            {tr(L("You can add it so the clinic knows whose sheet it is — it is never sent to the study.", "Anda boleh menambahnya supaya klinik tahu helaian siapa — ia tidak pernah dihantar kepada kajian."))}
+          </Collected>
+        </ul>
+
+        {/* Withdrawal — an honest consequence of pseudonymisation */}
+        <div className="consent-note">
+          <b>🎫 {tr(L("Changing your mind later", "Menukar fikiran kemudian"))}</b>{" "}
+          {tr(L(
+            "Your record carries a participant code and nothing else that points to you. That code is printed on your summary, and you are the only person who holds it. If you want your record removed later, quote that code to the contact below — without it, no one can find your record, including us.",
+            "Rekod anda membawa kod peserta dan tiada apa-apa lagi yang menunjuk kepada anda. Kod itu dicetak pada ringkasan anda, dan anda sahaja yang memegangnya. Jika anda mahu rekod anda dibuang kemudian, nyatakan kod itu kepada hubungan di bawah — tanpanya, tiada sesiapa boleh mencari rekod anda, termasuk kami."
+          ))}
+        </div>
+
+        <p className="gate-p small" style={{ marginBottom: 10 }}>
+          {tr(L("Kept for", "Disimpan selama"))}: <b>{ETHICS.retentionYears} {tr(L("years", "tahun"))}</b>
+          {ETHICS.contactEmail ? <> · {tr(L("Contact", "Hubungi"))}: <b>{ETHICS.contactEmail}</b></> : null}
+          {approvalKnown
+            ? <> · {tr(L("Approval", "Kelulusan"))}: <b>{[ETHICS.nmrrId, ETHICS.mrecRef].filter(Boolean).join(" · ")}</b></>
+            : null}
+        </p>
+
+        {!approvalKnown && (
+          <div className="flag" style={{ marginBottom: 12 }}>
+            {tr(L(
+              "⚠ Ethics approval reference has not been recorded in this build. Collection must not run in a live setting until the NMRR/MREC reference is configured.",
+              "⚠ Rujukan kelulusan etika belum direkodkan dalam binaan ini. Pengumpulan tidak boleh dijalankan dalam persekitaran sebenar sehingga rujukan NMRR/MREC ditetapkan."
+            ))}
+          </div>
+        )}
+
+        <button className={"consent-ack" + (ack ? " on" : "")} onClick={() => setAck(!ack)} aria-pressed={ack}>
+          <span className="symbox">{ack ? "☑" : "☐"}</span>
+          <span>{tr(L(
+            "I have read the above and I agree to my answers being used for this study.",
+            "Saya telah membaca perkara di atas dan saya bersetuju jawapan saya digunakan untuk kajian ini."
+          ))}</span>
+        </button>
+
+        <button className="btn primary block" disabled={!ack} onClick={onAccept}
+          style={{ marginTop: 12, ...(ack ? {} : { opacity: .5, cursor: "not-allowed" }) }}>
+          {tr(L("Yes — count me in", "Ya — sertakan saya"))}
+        </button>
+        <button className="btn ghost block" style={{ marginTop: 10 }} onClick={onDecline}>
+          {tr(L("No thanks — just let me use the tool", "Tidak — saya hanya mahu guna alat ini"))}
+        </button>
+        <p className="muted small" style={{ margin: "10px 0 0", textAlign: "center" }}>
+          {tr(L(
+            "Declining changes nothing about the tool. You get the same result and the same printable summary.",
+            "Menolak tidak mengubah apa-apa tentang alat ini. Anda dapat keputusan dan ringkasan bercetak yang sama."
+          ))}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Participant details — LOCAL ONLY, printed, never transmitted        */
+/* ------------------------------------------------------------------ */
+function ParticipantDetails({ patientId, setPatientId, participantCode, lang, submitState }) {
+  const tr = (v) => pick(v, lang);
+  return (
+    <div className="card idcard">
+      <h3 style={{ marginBottom: 4 }}>🖨️ {tr(L("Prepare the sheet for Klinik Kesihatan", "Sediakan helaian untuk Klinik Kesihatan"))}</h3>
+      <p className="muted small" style={{ marginBottom: 12 }}>
+        {tr(L(
+          "Add a name so the clinic knows whose sheet this is. This stays on your device and is printed on your copy only — it is never sent anywhere.",
+          "Tambah nama supaya klinik tahu helaian ini milik siapa. Ia kekal pada peranti anda dan dicetak pada salinan anda sahaja — ia tidak dihantar ke mana-mana."
+        ))}
+      </p>
+
+      <label className="field">
+        <span>{tr(L("Name on the sheet", "Nama pada helaian"))}</span>
+        <input type="text" value={patientId.name} maxLength={80}
+          onChange={(e) => setPatientId({ ...patientId, name: e.target.value })}
+          placeholder={tr(L("e.g. Siti binti Ahmad", "cth. Siti binti Ahmad"))} />
+      </label>
+
+      <label className="field">
+        <span>{tr(L("IC / MyKad number (optional)", "Nombor IC / MyKad (pilihan)"))}</span>
+        <input type="text" value={patientId.ic} maxLength={20}
+          onChange={(e) => setPatientId({ ...patientId, ic: e.target.value })}
+          placeholder={tr(L("Leave blank if you prefer", "Biarkan kosong jika anda mahu"))} />
+      </label>
+
+      <div className="idlocal">
+        🔒 {tr(L(
+          "These two fields never leave this device. They are not part of the study record and are not sent to any server.",
+          "Dua medan ini tidak pernah meninggalkan peranti ini. Ia bukan sebahagian rekod kajian dan tidak dihantar ke mana-mana pelayan."
+        ))}
+      </div>
+
+      {participantCode && (
+        <div className="idcode">
+          <span className="idcode-l">{tr(L("Your participant code", "Kod peserta anda"))}</span>
+          <b>{participantCode}</b>
+          <span className="idcode-n">{tr(L(
+            "Printed on your summary. Keep it — it is the only way to have your study record removed later.",
+            "Dicetak pada ringkasan anda. Simpan ia — itu satu-satunya cara untuk membuang rekod kajian anda kemudian."
+          ))}</span>
+        </div>
+      )}
+
+      {submitState && (
+        <div className={"subrow sub-" + submitState}>
+          {submitState === "sending" && tr(L("Saving your anonymous study record…", "Menyimpan rekod kajian tanpa nama anda…"))}
+          {submitState === "sent" && `✅ ${tr(L("Anonymous study record saved. Thank you for taking part.", "Rekod kajian tanpa nama disimpan. Terima kasih kerana menyertai."))}`}
+          {submitState === "error" && `⚠ ${tr(L("Your study record could not be saved. Your results and summary are unaffected.", "Rekod kajian anda tidak dapat disimpan. Keputusan dan ringkasan anda tidak terjejas."))}`}
+          {submitState === "declined" && tr(L("You chose not to take part. Nothing has been sent.", "Anda memilih untuk tidak menyertai. Tiada apa yang dihantar."))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
 export default function FamilyCancerRiskAssistant() {
@@ -2326,6 +2595,18 @@ export default function FamilyCancerRiskAssistant() {
   const [entered, setEntered] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [panel, setPanel] = useState(null); // null | "faq" | "registry" | "quiz" | "notebook" — landing-hub sub-views
+
+  /* --- Research collection (see src/collection.js) -------------------
+     consent: null = not asked | "given" | "declined". Declining is fully
+     supported — the clinical tool behaves identically either way.
+     patientId never leaves the device; it exists only to label the printout. */
+  const [consent, setConsent] = useState(null);
+  const [showConsent, setShowConsent] = useState(false);
+  const [participantCode, setParticipantCode] = useState("");
+  const [patientId, setPatientId] = useState({ name: "", ic: "" });
+  const [submitState, setSubmitState] = useState(null); // null | sending | sent | error | declined
+  const submittedRef = useRef(false);    // one submission per completed check
+  const summaryMarkedRef = useRef(false); // one summary flag per participant
 
   const [profile, setProfile] = useState({
     age: "", sex: "", ethnicity: "", state: "", everSex: "", smoke: "", smoke20y: false,
@@ -2375,6 +2656,12 @@ export default function FamilyCancerRiskAssistant() {
   const reset = () => {
     setProfile({ age: "", sex: "", ethnicity: "", state: "", everSex: "", smoke: "", smoke20y: false, passiveSmoke: "", occupationalHazards: [] });
     setRelatives([]); setGenetics([]); setSymptoms({}); setSymNoneChecked(false); setStep(0); setPanel(null);
+    // A new check is a new participant: clear the code, the local identifiers
+    // and the submission guard so the next person is never merged with this one.
+    setConsent(null); setShowConsent(false); setParticipantCode("");
+    setPatientId({ name: "", ic: "" }); setSubmitState(null);
+    summaryMarkedRef.current = false;
+    submittedRef.current = false;
   };
 
   const toggleHazard = (id) =>
@@ -2388,6 +2675,47 @@ export default function FamilyCancerRiskAssistant() {
 
   const canNext0 = true;
   const canNext1 = profile.age && profile.sex;
+
+  /* Consent is asked once, before any answer is entered, and only when
+     collection is switched on for this build. Every "start the check" entry
+     point goes through here so no route can skip the ask. */
+  const startCheck = () => {
+    setPanel(null);
+    if (COLLECTION_ENABLED && consent === null) { setShowConsent(true); return; }
+    setStep(1);
+  };
+
+  const acceptConsent = () => {
+    setConsent("given");
+    setParticipantCode(makeParticipantCode());
+    setShowConsent(false);
+    setStep(1);
+  };
+
+  const declineConsent = () => {
+    setConsent("declined");
+    setSubmitState("declined");
+    setShowConsent(false);
+    setStep(1);
+  };
+
+  /* Submit once, on reaching the results. The record is built by
+     buildResearchRecord() in src/collection.js — the single place where the
+     outgoing payload is defined. Nothing is sent without "given" consent. */
+  useEffect(() => {
+    if (step !== 4 || consent !== "given" || submittedRef.current) return;
+    submittedRef.current = true;
+    setSubmitState("sending");
+    const record = buildResearchRecord({
+      participantCode,
+      profile, relatives, genetics, results, symptoms,
+      lang, appVersion: APP_VERSION,
+    });
+    submitResearchRecord(record).then((r) => setSubmitState(r.ok ? "sent" : "error"));
+    // Intentionally keyed on step/consent only: the record is a snapshot taken
+    // when the results are first shown, not a live mirror of later edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, consent]);
 
   return (
     <div className="fcra">
@@ -2431,7 +2759,7 @@ export default function FamilyCancerRiskAssistant() {
                   "Jawab beberapa soalan mudah tentang keluarga anda. Anda akan dapat tahap risiko dan langkah seterusnya yang jelas: perlu jumpa doktor atau tidak, ujian mana, berapa kerap, dan tanda amaran untuk diperhatikan."
                 ))}
               </p>
-              <button className="btn hero-cta block" onClick={() => setStep(1)}>
+              <button className="btn hero-cta block" onClick={startCheck}>
                 {tr(L("Start the check", "Mula semakan"))} →
               </button>
             </div>
@@ -2471,10 +2799,7 @@ export default function FamilyCancerRiskAssistant() {
             {/* Trust line */}
             <div className="card" style={{ marginTop: 16 }}>
               <div className="flag" style={{ margin: 0 }}>
-                {tr(L(
-                  "🔒 Private & free — we ask only age, sex, ethnicity and state. No name, IC or phone number. Nothing is saved; it disappears when you close this page.",
-                  "🔒 Peribadi & percuma — kami tanya umur, jantina, etnik dan negeri sahaja. Tiada nama, IC atau nombor telefon. Tiada apa disimpan; semuanya hilang bila anda tutup halaman ini."
-                ))}
+                {tr(PRIVACY_HUB)}
               </div>
               <div className="disclaimer">
                 <span>ℹ️</span>
@@ -2505,7 +2830,7 @@ export default function FamilyCancerRiskAssistant() {
             </div>
             <WhyUse lang={lang} />
             <div className="card">
-              <button className="btn primary block" onClick={() => { setPanel(null); setStep(1); }}>
+              <button className="btn primary block" onClick={startCheck}>
                 {tr(L("Start the check", "Mula semakan"))} →
               </button>
             </div>
@@ -2528,7 +2853,7 @@ export default function FamilyCancerRiskAssistant() {
             <div className="panelhead">
               <button className="btn ghost" onClick={() => setPanel(null)}>← {tr(L("Back", "Kembali"))}</button>
             </div>
-            <PublicQuiz lang={lang} onStartCheck={() => { setPanel(null); setStep(1); }} />
+            <PublicQuiz lang={lang} onStartCheck={startCheck} />
           </>
         )}
 
@@ -2782,7 +3107,18 @@ export default function FamilyCancerRiskAssistant() {
                   "Bagi setiap kanser di bawah: tahap risiko, perlu jumpa doktor, ujian mana, berapa kerap, dan tanda untuk diperhatikan. Bawa ini kepada doktor anda."
                 ))}
               </p>
-              <button className="btn primary block" style={{ marginTop: 6 }} onClick={() => setShowSummary(true)}>
+              <button className="btn primary block" style={{ marginTop: 6 }}
+                onClick={() => {
+                  setShowSummary(true);
+                  /* Producing the clinic sheet is the study's "did they act?"
+                     signal, so flag it on the record that already exists.
+                     Fire-and-forget: a failure here must never block or delay
+                     the patient getting their sheet. */
+                  if (consent === "given" && participantCode && !summaryMarkedRef.current) {
+                    summaryMarkedRef.current = true;
+                    markSummaryGenerated(participantCode);
+                  }
+                }}>
                 🖨️ {tr(L("Generate a summary for my doctor (GP)", "Jana ringkasan untuk doktor (GP) saya"))}
               </button>
               <div className="disclaimer">
@@ -2793,6 +3129,15 @@ export default function FamilyCancerRiskAssistant() {
                 ))}</span>
               </div>
             </div>
+
+            {/* Name for the printout (local only) + study record status */}
+            <ParticipantDetails
+              patientId={patientId}
+              setPatientId={setPatientId}
+              participantCode={participantCode}
+              lang={lang}
+              submitState={submitState}
+            />
 
             {/* Family pedigree */}
             {relatives.length > 0 && (
@@ -2908,6 +3253,11 @@ export default function FamilyCancerRiskAssistant() {
         )}
       </div>
 
+      {/* Participant information + consent — only when collection is on */}
+      {entered && showConsent && (
+        <ConsentGate lang={lang} onAccept={acceptConsent} onDecline={declineConsent} />
+      )}
+
       {/* Entry disclaimer gate */}
       {!entered && (
         <div className="gate-bg">
@@ -2924,10 +3274,7 @@ export default function FamilyCancerRiskAssistant() {
               ))}
             </p>
             <p className="gate-p">
-              {tr(L(
-                "Do NOT enter patient-identifiable data (full name, IC number, phone). Nothing you enter is stored or transmitted — it stays in your browser and disappears when you close the page.",
-                "JANGAN masukkan data pengenalan pesakit (nama penuh, nombor IC, telefon). Tiada apa yang dimasukkan disimpan atau dihantar — ia kekal dalam pelayar anda dan hilang bila halaman ditutup."
-              ))}
+              {tr(PRIVACY_GATE)}
             </p>
             <p className="gate-p">
               <b>{tr(L("This is not medical advice.", "Ini bukan nasihat perubatan."))}</b>{" "}
@@ -2952,6 +3299,8 @@ export default function FamilyCancerRiskAssistant() {
           symptoms={symptoms}
           lang={lang}
           cancerMeta={cancerMeta}
+          patientId={patientId}
+          participantCode={participantCode}
           onClose={() => setShowSummary(false)}
         />
       )}
