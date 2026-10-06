@@ -148,6 +148,7 @@ export const RESEARCH_FIELDS = [
   "symptoms_flagged",
   "n_symptoms_flagged",
   "any_red_flag",
+  "summary_generated",
 ];
 
 /**
@@ -206,7 +207,35 @@ export function buildResearchRecord({
     symptoms_flagged: flagged.join(";") || "none",
     n_symptoms_flagged: flagged.length,
     any_red_flag: flagged.length > 0 ? "yes" : "no",
+
+    /* Starts "no" and is flipped to "yes" in place by markSummaryGenerated()
+       if the participant actually produces a sheet for the clinic. It cannot
+       be known at this moment — the results have only just rendered. */
+    summary_generated: "no",
   };
+}
+
+/**
+ * Flip summary_generated to "yes" for a participant who has produced their
+ * clinic sheet. Deliberately separate from the submission: the record is
+ * written for EVERY consented participant when the results render, so the
+ * denominator stays complete, and this marks the subset who went on to act.
+ * Tying the submission itself to this button would have silently dropped
+ * everyone who never printed — a biased sample, and a quiet one.
+ *
+ * Carries the participant code and nothing else.
+ */
+export async function markSummaryGenerated(participantCode) {
+  try {
+    const res = await fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ markSummary: { participant_code: participantCode } }),
+    });
+    return { ok: res.ok };
+  } catch (err) {
+    return { ok: false };
+  }
 }
 
 /**

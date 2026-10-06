@@ -55,7 +55,7 @@ different store. Do not bolt a contact field onto this one.
 
 ### What is collected
 
-Exactly the 28 fields in `RESEARCH_FIELDS`, and nothing else — it is an
+Exactly the 29 fields in `RESEARCH_FIELDS`, and nothing else — it is an
 allowlist, not a filter, so a new profile field cannot leak by accident. Exact
 age is **banded before it leaves the device**: a rare cancer plus a specific
 ethnicity plus a small state is re-identifying even with no name attached, so
@@ -81,7 +81,7 @@ Before go-live:
 4. Header row pasted into row 1, in this exact order:
 
 ```
-submitted_at	participant_code	app_version	consent_version	language	age_band	sex	ethnicity	state	ever_sexually_active	smoking	smoked_20y	passive_smoke	occupational_hazards	relatives_encoded	n_relatives	n_first_degree	n_second_degree	any_relative_under_50	genetics	risk_colorectal	risk_breast	risk_lung	risk_cervical	risk_npc	symptoms_flagged	n_symptoms_flagged	any_red_flag
+submitted_at	participant_code	app_version	consent_version	language	age_band	sex	ethnicity	state	ever_sexually_active	smoking	smoked_20y	passive_smoke	occupational_hazards	relatives_encoded	n_relatives	n_first_degree	n_second_degree	any_relative_under_50	genetics	risk_colorectal	risk_breast	risk_lung	risk_cervical	risk_npc	symptoms_flagged	n_symptoms_flagged	any_red_flag	summary_generated
 ```
 
 5. Service account created with **Editor on that one sheet only** — share the
@@ -114,8 +114,27 @@ from real patients does.
 
 Created in the institutional account `ppnaim@moh.gov.my`:
 [Family Cancer Risk Check — Study Data (pseudonymised)](https://docs.google.com/spreadsheets/d/1aWzcp4sNKZUuCSqq_qm9EICVndontepq8Gy88-KlCwQ/edit)
-(`SHEETS_SPREADSHEET_ID=1aWzcp4sNKZUuCSqq_qm9EICVndontepq8Gy88-KlCwQ`). Header
-row is in place; the tab still needs renaming per step 7 above.
+(`SHEETS_SPREADSHEET_ID=1aWzcp4sNKZUuCSqq_qm9EICVndontepq8Gy88-KlCwQ`). Header row is in place for the first 28 columns. **Two manual steps remain:**
+rename the tab per step 7 below, and type `summary_generated` into cell **AC1**
+(added after the sheet was created).
+
+### The `summary_generated` flag
+
+Every consented participant gets a row when their results render, so the
+denominator is complete. `summary_generated` then flips from `no` to `yes` in
+place if they go on to produce a clinic sheet — the study's "did they act?"
+signal.
+
+It is deliberately *not* the trigger for the submission itself. Tying collection
+to the print button would have silently dropped every participant who consented
+but never printed, which is a biased sample and a quiet one: you would see only
+the motivated subset and have no way to know what you were missing.
+
+The update path (`{ markSummary: { participant_code } }`) carries the code and
+nothing else. It finds the row by that code and sets one cell, so the endpoint
+cannot introduce new data. A code that does not match the format is refused; a
+code with no row yet returns 404 and is ignored by the client, since the
+submission may still be in flight.
 
 ### A standing caution on Google Sheets
 

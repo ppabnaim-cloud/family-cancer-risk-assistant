@@ -5,6 +5,7 @@ import {
   makeParticipantCode,
   buildResearchRecord,
   submitResearchRecord,
+  markSummaryGenerated,
 } from "./collection";
 
 /**
@@ -2604,7 +2605,8 @@ export default function FamilyCancerRiskAssistant() {
   const [participantCode, setParticipantCode] = useState("");
   const [patientId, setPatientId] = useState({ name: "", ic: "" });
   const [submitState, setSubmitState] = useState(null); // null | sending | sent | error | declined
-  const submittedRef = useRef(false); // one submission per completed check
+  const submittedRef = useRef(false);    // one submission per completed check
+  const summaryMarkedRef = useRef(false); // one summary flag per participant
 
   const [profile, setProfile] = useState({
     age: "", sex: "", ethnicity: "", state: "", everSex: "", smoke: "", smoke20y: false,
@@ -2658,6 +2660,7 @@ export default function FamilyCancerRiskAssistant() {
     // and the submission guard so the next person is never merged with this one.
     setConsent(null); setShowConsent(false); setParticipantCode("");
     setPatientId({ name: "", ic: "" }); setSubmitState(null);
+    summaryMarkedRef.current = false;
     submittedRef.current = false;
   };
 
@@ -3105,7 +3108,17 @@ export default function FamilyCancerRiskAssistant() {
                 ))}
               </p>
               <button className="btn primary block" style={{ marginTop: 6 }}
-                onClick={() => setShowSummary(true)}>
+                onClick={() => {
+                  setShowSummary(true);
+                  /* Producing the clinic sheet is the study's "did they act?"
+                     signal, so flag it on the record that already exists.
+                     Fire-and-forget: a failure here must never block or delay
+                     the patient getting their sheet. */
+                  if (consent === "given" && participantCode && !summaryMarkedRef.current) {
+                    summaryMarkedRef.current = true;
+                    markSummaryGenerated(participantCode);
+                  }
+                }}>
                 🖨️ {tr(L("Generate a summary for my doctor (GP)", "Jana ringkasan untuk doktor (GP) saya"))}
               </button>
               <div className="disclaimer">

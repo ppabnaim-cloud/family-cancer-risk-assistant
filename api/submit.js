@@ -67,6 +67,7 @@ const RESEARCH_FIELDS = [
   "symptoms_flagged",
   "n_symptoms_flagged",
   "any_red_flag",
+  "summary_generated",
 ];
 
 /* Keys that must never appear. Presence means something is badly wrong
@@ -83,6 +84,18 @@ const FORBIDDEN_KEYS = [
 /* A free-text field could carry an identifier in any shape, so every value is
    also length-capped. Nothing in the model legitimately exceeds this. */
 const MAX_VALUE_LENGTH = 300;
+
+/** 1 -> A, 27 -> AA, 29 -> AC. Derived from the field list so the column
+    can never drift out of step with RESEARCH_FIELDS. */
+function colLetter(n) {
+  let s = "";
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
 
 function b64url(input) {
   return Buffer.from(input)
@@ -156,7 +169,67 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server is not configured for collection." });
   }
 
+  const tab = SHEETS_TAB_NAME || "Submissions";
+  const sheetBase = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_SPREADSHEET_ID}`;
+
   try {
+    /* --- Path B: mark an existing row as having produced a clinic sheet ---
+       Carries only the participant code. Finds the row by that code and sets
+       one cell; it cannot write anything else, so this endpoint stays unable
+       to introduce new data. */
+    const mark = (req.body || {}).markSummary;
+    if (mark) {
+      const code = String(mark.participant_code || "");
+      if (!/^FCR-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) {
+        return res.status(400).json({ error: "Malformed participant code." });
+      }
+
+      const accessToken = await getAccessToken(
+        GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n")
+      );
+
+      const codeCol = colLetter(RESEARCH_FIELDS.indexOf("participant_code") + 1);
+      const flagCol = colLetter(RESEARCH_FIELDS.indexOf("summary_generated") + 1);
+
+      // Read only the code column, never the table.
+      const readUrl = `${sheetBase}/values/${encodeURIComponent(`${tab}!${codeCol}:${codeCol}`)}`;
+      const readRes = await fetch(readUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!readRes.ok) {
+        const detail = await readRes.text();
+        console.error("Sheets read failed:", readRes.status, detail.slice(0, 300));
+        return res.status(502).json({ error: "Could not reach the record." });
+      }
+      const rows = (await readRes.json()).values || [];
+
+      // Search upward: codes are unique, but if one were ever reused the most
+      // recent row is the current session's.
+      let rowNumber = -1;
+      for (let i = rows.length - 1; i >= 0; i--) {
+        if ((rows[i] || [])[0] === code) { rowNumber = i + 1; break; }
+      }
+      if (rowNumber < 0) {
+        // The submission may still be in flight; not an error worth surfacing.
+        return res.status(404).json({ error: "No matching record yet." });
+      }
+
+      const writeUrl =
+        `${sheetBase}/values/${encodeURIComponent(`${tab}!${flagCol}${rowNumber}`)}` +
+        `?valueInputOption=RAW`;
+      const writeRes = await fetch(writeUrl, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ values: [["yes"]] }),
+      });
+      if (!writeRes.ok) {
+        const detail = await writeRes.text();
+        console.error("Sheets update failed:", writeRes.status, detail.slice(0, 300));
+        return res.status(502).json({ error: "Could not update the record." });
+      }
+      return res.status(200).json({ ok: true });
+    }
+
+    /* --- Path A: append a new record --- */
     const record = (req.body || {}).record;
     if (!record || typeof record !== "object" || Array.isArray(record)) {
       return res.status(400).json({ error: "Malformed record." });
@@ -190,11 +263,9 @@ export default async function handler(req, res) {
       GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n")
     );
 
-    const tab = SHEETS_TAB_NAME || "Submissions";
-    const range = encodeURIComponent(`${tab}!A1`);
     const url =
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_SPREADSHEET_ID}` +
-      `/values/${range}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+      `${sheetBase}/values/${encodeURIComponent(`${tab}!A1`)}` +
+      `:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
 
     const upstream = await fetch(url, {
       method: "POST",

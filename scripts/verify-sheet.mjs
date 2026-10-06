@@ -97,6 +97,7 @@ const record = {
   symptoms_flagged: "none",
   n_symptoms_flagged: 0,
   any_red_flag: "no",
+  summary_generated: "no",
 };
 
 const handler = (await import(path.join(root, "api", "submit.js"))).default;
