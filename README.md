@@ -85,9 +85,37 @@ submitted_at	participant_code	app_version	consent_version	language	age_band	sex	
 ```
 
 5. Service account created with **Editor on that one sheet only** — share the
-   sheet with its email address; do not grant Drive-wide scope.
+   sheet with its email address; do not grant Drive-wide scope. The Google
+   Sheets API must be enabled on that Cloud project.
 6. Retention period agreed and `VITE_RETENTION_YEARS` set to match what the
    consent screen promises.
+7. **Check the tab name.** `SHEETS_TAB_NAME` defaults to `Submissions` and must
+   match the tab exactly, or the append fails with a 502. A sheet created by
+   importing a CSV gets a tab called **`Untitled`** regardless of the file name
+   — rename the tab, or set `SHEETS_TAB_NAME=Untitled`. This is the single most
+   common reason the pipeline looks broken when everything else is correct.
+
+### Verifying the pipeline
+
+```bash
+COLLECTION_ENABLED=true node scripts/verify-sheet.mjs
+```
+
+Calls the real `api/submit.js` handler, so a pass means the production code path
+works — ethics gate, identifier allowlist, service-account JWT and append. It
+writes one row marked `participant_code = FCR-TEST-0000` and
+`consent_version = PIPELINE-TEST`; **delete it before real collection begins.**
+
+Run this against the sheet while the deployed site still has collection off.
+Testing the plumbing with synthetic data needs no ethics approval; collecting
+from real patients does.
+
+### The study sheet
+
+Created in the institutional account `ppnaim@moh.gov.my`:
+[Family Cancer Risk Check — Study Data (pseudonymised)](https://docs.google.com/spreadsheets/d/1aWzcp4sNKZUuCSqq_qm9EICVndontepq8Gy88-KlCwQ/edit)
+(`SHEETS_SPREADSHEET_ID=1aWzcp4sNKZUuCSqq_qm9EICVndontepq8Gy88-KlCwQ`). Header
+row is in place; the tab still needs renaming per step 7 above.
 
 ### A standing caution on Google Sheets
 
