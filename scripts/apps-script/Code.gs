@@ -135,6 +135,80 @@ function colLetter(n) {
   return s;
 }
 
+/**
+ * One-click end-to-end test. Paste your deployed Web App URL into WEB_APP_URL
+ * below, choose "testPost" in the function dropdown, and click Run.
+ *
+ * This posts a clearly-marked test record to your own deployment over HTTP,
+ * exactly as the app will — so it exercises the deployment, the secret check
+ * and the sheet write together, rather than just the part that runs locally.
+ *
+ * Expect: HTTP 200 and {"ok":true} in the Execution log, and a row in the sheet
+ * with participant_code FCR-TEST-0000. Delete that row before real collection.
+ */
+function testPost() {
+  const WEB_APP_URL = 'PASTE-YOUR-EXEC-URL-HERE';
+
+  if (WEB_APP_URL.indexOf('/exec') === -1) {
+    Logger.log('Set WEB_APP_URL to your deployed Web App URL first (it ends in /exec).');
+    return;
+  }
+
+  const record = {
+    submitted_at: new Date().toISOString(),
+    participant_code: 'FCR-TEST-0000',
+    app_version: 'pipeline-test',
+    consent_version: 'PIPELINE-TEST',
+    language: 'en',
+    age_band: '50-59',
+    sex: 'female',
+    ethnicity: 'malay',
+    state: 'Selangor',
+    ever_sexually_active: 'yes',
+    smoking: 'never',
+    smoked_20y: 'no',
+    passive_smoke: 'no',
+    occupational_hazards: 'none',
+    relatives_encoded: 'mother:breast:u50:na',
+    n_relatives: 1,
+    n_first_degree: 1,
+    n_second_degree: 0,
+    any_relative_under_50: 'yes',
+    genetics: 'none',
+    risk_colorectal: 'average',
+    risk_breast: 'moderate',
+    risk_lung: 'average',
+    risk_cervical: 'info',
+    risk_npc: 'info',
+    symptoms_flagged: 'none',
+    n_symptoms_flagged: 0,
+    any_red_flag: 'no',
+    summary_generated: 'no',
+  };
+
+  const res = UrlFetchApp.fetch(WEB_APP_URL, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ secret: SECRET, record: record }),
+    followRedirects: true,
+    muteHttpExceptions: true,
+  });
+
+  Logger.log('HTTP ' + res.getResponseCode());
+  Logger.log(res.getContentText());
+
+  const body = res.getContentText();
+  if (body.indexOf('"ok":true') !== -1) {
+    Logger.log('PASS — check the sheet for a row with participant_code FCR-TEST-0000.');
+  } else if (body.indexOf('unauthorised') !== -1) {
+    Logger.log('FAIL — the secret did not match. Redeploy a NEW VERSION after editing SECRET.');
+  } else if (body.indexOf('<') === 0) {
+    Logger.log('FAIL — Google served a web page, not JSON. Set "Who has access" to Anyone.');
+  } else {
+    Logger.log('FAIL — see the response above.');
+  }
+}
+
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);

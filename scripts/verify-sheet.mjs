@@ -44,16 +44,24 @@ const loaded = loadEnvLocal();
 if (loaded) console.log(`Loaded ${loaded} variable(s) from .env.local\n`);
 
 /* --- Pre-flight: say which variable is missing, rather than failing opaquely */
-const required = [
-  "COLLECTION_ENABLED",
-  "GOOGLE_SERVICE_ACCOUNT_EMAIL",
-  "GOOGLE_PRIVATE_KEY",
-  "SHEETS_SPREADSHEET_ID",
-];
-const missing = required.filter((k) => !process.env[k]);
-if (missing.length) {
-  console.error("✗ Missing environment variable(s):\n  " + missing.join("\n  "));
-  console.error("\nSet them in .env.local (see .env.example) and run again.");
+/* Which destination is configured? Mirrors chooseSink() in api/submit.js. */
+const E = process.env;
+const sink =
+  (E.GOOGLE_SERVICE_ACCOUNT_EMAIL && E.GOOGLE_PRIVATE_KEY && E.SHEETS_SPREADSHEET_ID) ? "sheets"
+  : (E.APPS_SCRIPT_URL && E.APPS_SCRIPT_SECRET) ? "appsscript"
+  : (E.EMAILJS_SERVICE_ID && E.EMAILJS_TEMPLATE_ID && E.EMAILJS_PUBLIC_KEY && E.EMAILJS_PRIVATE_KEY) ? "email"
+  : null;
+
+if (!E.COLLECTION_ENABLED) {
+  console.error("✗ COLLECTION_ENABLED is not set.");
+  process.exit(1);
+}
+if (!sink) {
+  console.error("✗ No destination configured. Set ONE of these groups in .env.local:");
+  console.error("    Sheets      GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_PRIVATE_KEY + SHEETS_SPREADSHEET_ID");
+  console.error("    Apps Script APPS_SCRIPT_URL + APPS_SCRIPT_SECRET");
+  console.error("    Email       the EMAILJS_* set + RESEARCH_TO_EMAIL");
+  console.error("\nSee .env.example.");
   process.exit(1);
 }
 if (String(process.env.COLLECTION_ENABLED).toLowerCase() !== "true") {
@@ -62,10 +70,18 @@ if (String(process.env.COLLECTION_ENABLED).toLowerCase() !== "true") {
   process.exit(1);
 }
 
-const tab = process.env.SHEETS_TAB_NAME || "Submissions";
-console.log("Spreadsheet :", process.env.SHEETS_SPREADSHEET_ID);
-console.log("Tab         :", tab, "(must match the tab name in the sheet exactly)");
-console.log("Service acct:", process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL, "\n");
+const tab = E.SHEETS_TAB_NAME || "Submissions";
+console.log("Destination :", sink);
+if (sink === "sheets") {
+  console.log("Spreadsheet :", E.SHEETS_SPREADSHEET_ID);
+  console.log("Tab         :", tab, "(must match the tab name in the sheet exactly)");
+  console.log("Service acct:", E.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+} else if (sink === "appsscript") {
+  console.log("Web App URL :", E.APPS_SCRIPT_URL);
+} else {
+  console.log("Email to    :", E.RESEARCH_TO_EMAIL || E.FEEDBACK_TO_EMAIL || "(not set)");
+}
+console.log();
 
 /* --- The synthetic record. Shaped like a real one, marked unmistakably. --- */
 const record = {
