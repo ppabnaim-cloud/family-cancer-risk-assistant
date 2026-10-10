@@ -21,15 +21,34 @@
  * 4. Nothing identifying is logged. Errors log the status and the Google error,
  *    never the record.
  *
+ * 5. THREE POSSIBLE DESTINATIONS, chosen automatically by which variables are
+ *    set. They exist because a Google Workspace tenant can switch off Google
+ *    Cloud Platform for its users, which kills the service-account route
+ *    through no fault of the person configuring it.
+ *
+ *      a. "sheets"     — service account writing straight to the Sheets API.
+ *                        Best, but needs Google Cloud Platform access.
+ *      b. "appsscript" — a Web App deployed from the sheet itself. Apps Script
+ *                        is a Workspace service, NOT Cloud Platform, so this
+ *                        usually survives a GCP block. Same sheet, same row,
+ *                        no Cloud Console, no key file.
+ *      c. "email"      — EmailJS, reusing whatever /api/feedback already uses.
+ *                        Always available, but each record arrives as a
+ *                        separate message that has to be pasted into the sheet
+ *                        by hand, so it does not scale past a small study.
+ *
  * Required environment variables (Vercel → Settings → Environment Variables):
  *   COLLECTION_ENABLED             "true" to accept records. Anything else refuses.
- *   GOOGLE_SERVICE_ACCOUNT_EMAIL   ...@...iam.gserviceaccount.com
- *   GOOGLE_PRIVATE_KEY             the PEM, newlines as literal \n
- *   SHEETS_SPREADSHEET_ID          the id from the sheet URL
- *   SHEETS_TAB_NAME                optional, defaults to "Submissions"
  *
- * The service account needs Editor on that ONE sheet and nothing else. Share
- * the sheet with its email address; do not grant it Drive-wide scope.
+ *   For (a):  GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY (PEM with
+ *             literal \n), SHEETS_SPREADSHEET_ID, and optionally
+ *             SHEETS_TAB_NAME (defaults to "Submissions").
+ *   For (b):  APPS_SCRIPT_URL, APPS_SCRIPT_SECRET.
+ *   For (c):  the EMAILJS_* set, plus RESEARCH_TO_EMAIL.
+ *
+ * Whichever is used, the record itself is identical — the allowlist and the
+ * identifier refusal run before the destination is chosen, so no destination
+ * can receive a field the others would not.
  */
 
 import crypto from "node:crypto";
@@ -143,6 +162,103 @@ async function getAccessToken(clientEmail, privateKey) {
   return data.access_token;
 }
 
+/** Which destination this deployment is configured for, in order of
+    preference. Returns null when none is, which is a configuration error
+    rather than a refusal. */
+function chooseSink(env) {
+  if (env.GOOGLE_SERVICE_ACCOUNT_EMAIL && env.GOOGLE_PRIVATE_KEY && env.SHEETS_SPREADSHEET_ID) {
+    return "sheets";
+  }
+  if (env.APPS_SCRIPT_URL && env.APPS_SCRIPT_SECRET) return "appsscript";
+  if (env.EMAILJS_SERVICE_ID && env.EMAILJS_TEMPLATE_ID &&
+      env.EMAILJS_PUBLIC_KEY && env.EMAILJS_PRIVATE_KEY) {
+    return "email";
+  }
+  return null;
+}
+
+/** Post to an Apps Script Web App. The shared secret is checked inside the
+    script, because a Web App deployed for "Anyone" is reachable by URL alone.
+    Apps Script answers with a 302 to googleusercontent.com; fetch follows it. */
+async function sendViaAppsScript(env, payload) {
+  const res = await fetch(env.APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ secret: env.APPS_SCRIPT_SECRET, ...payload }),
+    redirect: "follow",
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    console.error("Apps Script failed:", res.status, text.slice(0, 300));
+    return { ok: false, status: 502 };
+  }
+  // The script returns JSON; an HTML body means Google served a sign-in or
+  // error page instead, which almost always means the deployment's access is
+  // not set to "Anyone".
+  let parsed;
+  try { parsed = JSON.parse(text); } catch {
+    console.error("Apps Script returned non-JSON (check deployment access):", text.slice(0, 200));
+    return { ok: false, status: 502 };
+  }
+  if (parsed.error) {
+    console.error("Apps Script rejected the call:", parsed.error);
+    return { ok: false, status: 502 };
+  }
+  return { ok: true };
+}
+
+/** Email one record via EmailJS, reusing the service /api/feedback already
+    uses. The body carries a tab-separated line because pasting one into a
+    Google Sheet spreads it across the columns in a single action — the least
+    painful manual path that exists for this route. */
+async function sendViaEmail(env, row, record) {
+  const tsv = row.join("\t");
+  const readable = RESEARCH_FIELDS
+    .map((f, i) => `  ${f.padEnd(24)} ${row[i]}`)
+    .join("\n");
+
+  const summary = [
+    "A new anonymous study record was submitted.",
+    "",
+    "NO personal data is included: no name, IC, contact detail or exact age.",
+    `Participant code: ${record.participant_code}`,
+    "",
+    "── PASTE THIS LINE INTO THE SHEET ──────────────────────────────",
+    "Copy the single line below, click the first empty cell in column A,",
+    "and paste. Google Sheets splits it across all 29 columns for you.",
+    "",
+    tsv,
+    "",
+    "── THE SAME RECORD, READABLE ──────────────────────────────────",
+    readable,
+  ].join("\n");
+
+  const upstream = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      service_id: env.EMAILJS_SERVICE_ID,
+      template_id: env.EMAILJS_TEMPLATE_ID,
+      user_id: env.EMAILJS_PUBLIC_KEY,
+      accessToken: env.EMAILJS_PRIVATE_KEY,
+      template_params: {
+        to_email: env.RESEARCH_TO_EMAIL || env.FEEDBACK_TO_EMAIL || "",
+        subject: `FCRC study record — ${record.participant_code}`,
+        summary,
+        submitted_at: record.submitted_at || "",
+        app_version: record.app_version || "",
+      },
+    }),
+  });
+
+  if (!upstream.ok) {
+    const detail = await upstream.text();
+    console.error("EmailJS failed:", upstream.status, detail.slice(0, 300));
+    return { ok: false, status: 502 };
+  }
+  return { ok: true };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -164,8 +280,9 @@ export default async function handler(req, res) {
     });
   }
 
-  if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY || !SHEETS_SPREADSHEET_ID) {
-    console.error("/api/submit: Google Sheets environment variables are missing");
+  const sink = chooseSink(process.env);
+  if (!sink) {
+    console.error("/api/submit: no destination configured (need Sheets, Apps Script or EmailJS variables)");
     return res.status(500).json({ error: "Server is not configured for collection." });
   }
 
@@ -182,6 +299,19 @@ export default async function handler(req, res) {
       const code = String(mark.participant_code || "");
       if (!/^FCR-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) {
         return res.status(400).json({ error: "Malformed participant code." });
+      }
+
+      if (sink === "appsscript") {
+        const r = await sendViaAppsScript(process.env, { markSummary: { participant_code: code } });
+        return r.ok ? res.status(200).json({ ok: true })
+                    : res.status(r.status).json({ error: "Could not update the record." });
+      }
+
+      if (sink === "email") {
+        /* A sent email cannot be amended, so this signal is unavailable on the
+           email route. Answered 200 so the client does not show the patient an
+           error for something that is a configuration limit, not a failure. */
+        return res.status(200).json({ ok: true, noop: "summary flag unavailable on the email route" });
       }
 
       const accessToken = await getAccessToken(
@@ -256,6 +386,20 @@ export default async function handler(req, res) {
     // front-end bug — better to reject than to write an orphan row.
     if (!row[RESEARCH_FIELDS.indexOf("participant_code")]) {
       return res.status(400).json({ error: "Record is missing a participant code." });
+    }
+
+    if (sink === "appsscript") {
+      const r = await sendViaAppsScript(process.env, { record: Object.fromEntries(
+        RESEARCH_FIELDS.map((f, i) => [f, row[i]])
+      ) });
+      return r.ok ? res.status(200).json({ ok: true })
+                  : res.status(r.status).json({ error: "Could not save the record." });
+    }
+
+    if (sink === "email") {
+      const r = await sendViaEmail(process.env, row, record);
+      return r.ok ? res.status(200).json({ ok: true })
+                  : res.status(r.status).json({ error: "Could not save the record." });
     }
 
     const accessToken = await getAccessToken(
