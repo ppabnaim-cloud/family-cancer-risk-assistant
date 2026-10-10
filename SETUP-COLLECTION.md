@@ -71,6 +71,34 @@ You should now have 29 headers, A1 through AC1.
 
 ---
 
+## Choose your route first
+
+Step 2 below needs **Google Cloud Platform**, which many MOH/government
+Workspace tenants switch off for their users. If you see *"you do not have
+access to Google Cloud Platform"*, that is an organisation policy and there is
+nothing to fix on your side — use Route B or C instead.
+
+| | Route | Needs | Data lands in | Effort |
+|---|---|---|---|---|
+| **A** | Service account | Google Cloud Platform access | The sheet, automatically | ~20 min |
+| **B** | **Apps Script Web App** | Only the sheet itself | The sheet, automatically | **~10 min** |
+| **C** | Email (EmailJS) | Nothing new | Your inbox, pasted in by hand | ~2 min |
+
+**Route B is the one to try if Cloud Platform is blocked.** Apps Script is a
+Google *Workspace* service, not a Cloud Platform one, so it usually survives
+that block. It writes the same rows to the same sheet — the only difference is
+how the app proves who it is.
+
+**Route C always works** but does not scale: each participant arrives as a
+separate email that you paste into the sheet by hand, and the
+`summary_generated` signal is unavailable because a sent email cannot be
+amended. Reasonable for a pilot of a few dozen; painful beyond that.
+
+Jump to [Route B](#route-b--apps-script-web-app-no-cloud-platform-needed) or
+[Route C](#route-c--email) if Route A is blocked for you.
+
+---
+
 ## Step 2 — Create the service account (10 minutes)
 
 > **Before you start:** some organisations block service-account key creation by
@@ -287,6 +315,135 @@ redeploy, nothing changes and it will look like the variables did nothing.
 `VITE_` variables are compiled into the JavaScript at build time; the other four
 are read by the server when a request arrives. That difference is why a redeploy
 is required.
+
+---
+
+## Route B — Apps Script Web App (no Cloud Platform needed)
+
+Everything happens inside the sheet. No Cloud Console, no project, no key file,
+no private-key formatting.
+
+Do **Step 1** first (tab renamed to `Submissions`, `summary_generated` in AC1).
+
+### B1. Open the script editor
+
+- Open the sheet
+- Menu: **Extensions → Apps Script**
+- A code editor opens in a new tab, showing a file called `Code.gs`
+
+### B2. Paste the script
+
+- Select everything in `Code.gs` and delete it
+- Copy the whole contents of
+  [`scripts/apps-script/Code.gs`](scripts/apps-script/Code.gs) from this
+  repository and paste it in
+- Near the top, change this line to a long random string of your own:
+
+  ```js
+  const SECRET = 'CHANGE-ME-to-a-long-random-string';
+  ```
+
+  Keep a copy — you will paste the same string into Vercel.
+- Click the **save** icon
+
+### B3. Deploy it as a Web App
+
+- Click **Deploy** (top right) → **New deployment**
+- Click the **gear icon** next to *"Select type"* → choose **Web app**
+- Fill in:
+  - **Description:** `fcrc-collector`
+  - **Execute as:** `Me`
+  - **Who has access:** `Anyone`
+- Click **Deploy**
+
+### B4. Authorise it
+
+Google will ask for permission, because the script writes to your sheet.
+
+- Click **Authorize access**, choose your account
+- You will see *"Google hasn't verified this app"* — this is expected for a
+  script you wrote yourself
+- Click **Advanced** → **Go to fcrc-collector (unsafe)**
+- Click **Allow**
+
+### B5. Copy the URL
+
+Copy the **Web app URL**. It ends in `/exec`.
+
+Check it works: paste that URL into a browser tab. You should see:
+
+```json
+{"ok":true,"service":"fcrc-collector"}
+```
+
+If you get a sign-in page instead, *Who has access* is not set to **Anyone** —
+go back to Deploy → Manage deployments and fix it.
+
+### B6. Set two variables in Vercel
+
+Follow [Step 5](#step-5--switch-it-on-in-vercel), but instead of the four Google
+variables, set these two:
+
+| Key | Value |
+|---|---|
+| `APPS_SCRIPT_URL` | the `/exec` URL from B5 |
+| `APPS_SCRIPT_SECRET` | the same random string you put in `SECRET` |
+
+Plus `COLLECTION_ENABLED`, `VITE_COLLECT_ENABLED`, `VITE_NMRR_ID` and
+`VITE_DATA_CONTACT` as in step 5. Then redeploy.
+
+> **On "Who has access: Anyone":** this means anyone holding the URL can POST to
+> it, which is why the secret exists — a request without it is rejected and
+> nothing is written. Treat the URL and the secret together as a credential, the
+> same way you would the service-account key file.
+
+> **If you edit the script later:** Deploy → Manage deployments → pencil icon →
+> Version: **New version** → Deploy. Saving the code alone does not update the
+> live Web App.
+
+---
+
+## Route C — Email
+
+The fallback that always works. Records arrive in your inbox and you paste them
+into the sheet.
+
+This reuses the EmailJS service `/api/feedback` already uses, so there is
+nothing new to create. In Vercel, set:
+
+| Key | Value |
+|---|---|
+| `RESEARCH_TO_EMAIL` | where records should go, e.g. `ppnaim@moh.gov.my` |
+
+plus `COLLECTION_ENABLED`, `VITE_COLLECT_ENABLED`, `VITE_NMRR_ID` and
+`VITE_DATA_CONTACT`, and leave all the Google and Apps Script variables unset.
+Then redeploy.
+
+### What arrives, and what to do with it
+
+Each email contains a single **tab-separated line**. Google Sheets splits a
+pasted tab-separated line across columns automatically, so:
+
+1. Copy the one long line under *"PASTE THIS LINE INTO THE SHEET"*
+2. Click the first empty cell in column **A** of the sheet
+3. Paste
+
+All 29 columns fill in one action. The email also repeats the same record in a
+readable list, so you can check it without decoding anything.
+
+### Limits of this route, stated plainly
+
+- **It does not scale.** One email per participant, each needing a manual paste.
+  Fine for tens, unworkable for hundreds.
+- **`summary_generated` is always `no`.** A sent email cannot be amended, so the
+  "did they generate a clinic sheet?" signal is lost on this route. The app does
+  not error — it simply has nowhere to record it.
+- **Records sit in a mailbox.** That is a weaker control than a shared sheet
+  with defined access, and worth mentioning in the ethics submission if this is
+  the route you run with.
+
+Use it to get moving, and switch to Route B when you can — switching is a change
+of Vercel variables and a redeploy, with no code change.
 
 ---
 
