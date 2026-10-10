@@ -38,7 +38,14 @@
 /** Must match APPS_SCRIPT_SECRET in Vercel. Change it before deploying. */
 const SECRET = 'CHANGE-ME-to-a-long-random-string';
 
-/** Must match the tab name exactly. */
+/** The study sheet, addressed by id rather than by SpreadsheetApp.getActive().
+    getActive() only works when the script was opened from inside the sheet
+    (Extensions -> Apps Script); a script started from script.google.com is
+    standalone and getActive() returns null. Naming the id makes the script
+    behave identically either way, which removes a confusing failure. */
+const SPREADSHEET_ID = '1aWzcp4sNKZUuCSqq_qm9EICVndontepq8Gy88-KlCwQ';
+
+/** The tab records are written to. setup() creates or renames it for you. */
 const SHEET_NAME = 'Submissions';
 
 /** Column order. Must match RESEARCH_FIELDS in src/collection.js and
@@ -86,6 +93,48 @@ const FORBIDDEN = [
   'dob', 'date_of_birth', 'birthdate', 'age',
 ];
 
+/**
+ * Run this ONCE before deploying: in the toolbar above, choose "setup" from the
+ * function dropdown and click Run. It prepares the sheet so you do not have to
+ * rename the tab or type the 29 headers by hand.
+ *
+ * It only ever writes row 1. Existing data rows are never touched.
+ */
+function setup() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(SHEET_NAME);
+
+  if (!sheet) {
+    const existing = ss.getSheets();
+    if (existing.length === 1) {
+      // The sheet created from the CSV import has a single tab called
+      // "Untitled". Rename it rather than adding a second one.
+      sheet = existing[0].setName(SHEET_NAME);
+    } else {
+      sheet = ss.insertSheet(SHEET_NAME);
+    }
+  }
+
+  sheet.getRange(1, 1, 1, FIELDS.length).setValues([FIELDS]);
+  sheet.setFrozenRows(1);
+
+  const msg = 'Ready. Tab "' + SHEET_NAME + '" has ' + FIELDS.length +
+              ' columns, A1 to ' + colLetter(FIELDS.length) + '1.';
+  Logger.log(msg);
+  return msg;
+}
+
+/** 1 -> A, 27 -> AA, 29 -> AC. */
+function colLetter(n) {
+  var s = '';
+  while (n > 0) {
+    var r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
@@ -94,9 +143,9 @@ function doPost(e) {
       return json({ error: 'unauthorised' });
     }
 
-    const sheet = SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
     if (!sheet) {
-      return json({ error: 'tab "' + SHEET_NAME + '" not found' });
+      return json({ error: 'tab "' + SHEET_NAME + '" not found — run setup() first' });
     }
 
     // Flip summary_generated to "yes" on an existing row.
