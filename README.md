@@ -12,6 +12,13 @@ snapshot.
 > **This is a research and education prototype. It supports decisions; it does
 > not replace a doctor and does not diagnose.**
 
+## Reusing this pattern
+
+[REUSE-TEMPLATE.md](REUSE-TEMPLATE.md) captures the architecture, a
+copy-paste prompt for starting a similar app in a fresh Claude Code session,
+and the traps that cost real time here — Workspace blocking Google Cloud
+Platform, the `Untitled` tab, `VITE_` variables being public, and the rest.
+
 ## Data handling
 
 **Two modes, controlled by a flag.** With collection off (the default) the app
