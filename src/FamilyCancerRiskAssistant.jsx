@@ -158,7 +158,7 @@ const RISK = {
       "Sejarah keluarga anda adalah petunjuk kuat. Sila jumpa doktor untuk pemeriksaan lebih awal dan kerap."
     ),
   },
-  info: { key: "info", tone: "teal", label: L("Good to know", "Perlu tahu"), blurb: L("", "") },
+  info: { key: "info", tone: "teal", label: L("Routine care", "Penjagaan rutin"), blurb: L("", "") },
 };
 
 /* ------------------------------------------------------------------ */
@@ -234,6 +234,37 @@ const GENERAL_SYMPTOMS = [
   { id: "gen_fever", label: L("Fevers that don't go away", "Demam yang tidak hilang") },
   { id: "gen_sweats", label: L("Drenching night sweats", "Berpeluh lebat pada waktu malam") },
 ];
+
+/* ------------------------------------------------------------------ */
+/* Display priority                                                    */
+/* ------------------------------------------------------------------ */
+/* ORDER AND EMPHASIS ONLY. Every risk level is still computed by the  */
+/* same functions from the same inputs — nothing about the clinical    */
+/* output changes here, only which card a reader meets first and which */
+/* starts folded.                                                      */
+/*                                                                     */
+/* A family member reading this page has usually just had bad news     */
+/* about someone they love. Leading with what needs acting on, and     */
+/* letting routine items sit quietly at the bottom, is the difference  */
+/* between a plan and a wall of text.                                  */
+/* ------------------------------------------------------------------ */
+const RISK_ORDER = { high: 1, moderate: 2, average: 3, info: 4 };
+
+/** Lower sorts first. A reported warning sign outranks every risk level: it
+    is the one thing on the page that may need acting on this week. */
+function displayRank(res, symptoms) {
+  const flagged = (SYMPTOMS[res.id] || []).some((it) => symptoms[it.id]);
+  if (flagged) return 0;
+  return RISK_ORDER[res.level] ?? 5;
+}
+
+/** Folded by default — never removed. A card only folds when there is nothing
+    to act on: no reported symptom, and no risk above the population baseline.
+    Deleting these outright would take the cervical screening schedule and the
+    NPC warning signs off the page entirely, which costs more than it saves. */
+function startsCollapsed(res, symptoms) {
+  return displayRank(res, symptoms) >= 3;
+}
 
 /* ------------------------------------------------------------------ */
 /* Screening plans (grounded / flagged)                                */
@@ -846,6 +877,32 @@ const CSS = `
 .fcra .consent-ack { display:flex; gap:11px; align-items:flex-start; width:100%; text-align:left; border:1.5px solid var(--line); background:#fff; border-radius:13px; padding:13px 15px; font:inherit; font-size:14px; line-height:1.45; color:var(--ink); cursor:pointer; margin-top:6px; }
 .fcra .consent-ack.on { border-color:var(--teal); background:var(--teal-soft); color:var(--teal-d); font-weight:600; }
 .fcra .consent-ack .symbox { font-size:17px; flex:none; line-height:1.3; }
+
+/* --- Folded result cards --------------------------------------------*/
+.fcra .result .head { width:100%; border:0; font:inherit; text-align:left; cursor:pointer; }
+.fcra .result .head .chev { margin-left:10px; font-size:13px; color:var(--muted); flex:none; }
+.fcra .result.folded { opacity:.92; }
+.fcra .result.folded .head { padding:14px 18px; }
+.fcra .result.folded .head .em { font-size:23px; }
+.fcra .result.folded .head .nm { font-size:16px; }
+.fcra .foldnote { display:block; width:100%; text-align:left; border:0; border-top:1px solid var(--line);
+  background:#fff; color:var(--muted); font:inherit; font-size:12.5px; padding:10px 18px 12px; cursor:pointer; }
+.fcra .foldnote:hover { color:var(--teal-d); }
+
+/* --- Summary action, coloured by what was actually found -------------*/
+.fcra .sumcard { border-top:4px solid var(--teal); }
+.fcra .sumcard.u-urgent { border-top-color:var(--red); }
+.fcra .sumcard.u-high { border-top-color:var(--amber); }
+.fcra .sum-lead { font-size:14px; font-weight:700; line-height:1.5; margin:0 0 12px; }
+.fcra .sumcard.u-urgent .sum-lead { color:#8a2222; }
+.fcra .sumcard.u-high .sum-lead { color:#8a5a10; }
+.fcra .btn.sum-cta { width:100%; font-size:16.5px; font-weight:800; padding:18px; letter-spacing:.01em;
+  background:var(--teal); color:#fff; box-shadow:0 6px 18px rgba(13,125,118,.26); }
+.fcra .btn.sum-cta:hover { background:var(--teal-d); }
+.fcra .sumcard.u-urgent .btn.sum-cta { background:var(--red); box-shadow:0 6px 18px rgba(194,58,58,.3); }
+.fcra .sumcard.u-urgent .btn.sum-cta:hover { background:#a82f2f; }
+.fcra .sumcard.u-high .btn.sum-cta { background:var(--amber); box-shadow:0 6px 18px rgba(192,122,30,.3); }
+.fcra .sumcard.u-high .btn.sum-cta:hover { background:#a4661a; }
 
 /* --- Participant details (local-only identifiers) -------------------*/
 .fcra .idcard { border-top:4px solid var(--accent); }
@@ -2529,10 +2586,22 @@ function ConsentGate({ lang, onAccept, onDecline }) {
 /* ------------------------------------------------------------------ */
 /* Participant details — LOCAL ONLY, printed, never transmitted        */
 /* ------------------------------------------------------------------ */
-function ParticipantDetails({ patientId, setPatientId, participantCode, lang, submitState, onGenerate }) {
+function ParticipantDetails({ patientId, setPatientId, participantCode, lang, submitState, onGenerate, urgency }) {
   const tr = (v) => pick(v, lang);
+  /* The call to action takes the colour of what was actually found, so a page
+     with a reported warning sign does not end in the same calm teal as one
+     with nothing to act on. */
+  const lead = urgency === "urgent"
+    ? L("You reported a warning sign. Take this sheet to a doctor or Klinik Kesihatan soon and show them.",
+        "Anda melaporkan tanda amaran. Bawa helaian ini kepada doktor atau Klinik Kesihatan segera dan tunjukkan kepada mereka.")
+    : urgency === "high"
+    ? L("Your family history changes what screening you need. Take this sheet to a doctor and discuss it.",
+        "Sejarah keluarga anda mengubah saringan yang anda perlukan. Bawa helaian ini kepada doktor dan bincangkan.")
+    : L("Take this sheet to your next clinic visit so your screening is set up correctly.",
+        "Bawa helaian ini ke lawatan klinik seterusnya supaya saringan anda ditetapkan dengan betul.");
   return (
-    <div className="card idcard">
+    <div className={"card idcard sumcard u-" + (urgency || "routine")}>
+      <p className="sum-lead">{tr(lead)}</p>
       <h3 style={{ marginBottom: 4 }}>🖨️ {tr(L("Prepare the sheet for Klinik Kesihatan", "Sediakan helaian untuk Klinik Kesihatan"))}</h3>
       <p className="muted small" style={{ marginBottom: 12 }}>
         {tr(L(
@@ -2573,7 +2642,7 @@ function ParticipantDetails({ patientId, setPatientId, participantCode, lang, su
         </div>
       )}
 
-      <button className="btn primary block" style={{ marginTop: 14 }} onClick={onGenerate}>
+      <button className="btn sum-cta" style={{ marginTop: 16 }} onClick={onGenerate}>
         🖨️ {tr(L("Generate the summary for my doctor (GP)", "Jana ringkasan untuk doktor (GP) saya"))}
       </button>
       <div className="disclaimer">
@@ -2617,6 +2686,11 @@ export default function FamilyCancerRiskAssistant() {
   const [patientId, setPatientId] = useState({ name: "", ic: "" });
   const [submitState, setSubmitState] = useState(null); // null | sending | sent | error | declined
   const submittedRef = useRef(false);    // one submission per completed check
+
+  /* Which result cards the reader has opened. Keyed by cancer id; a card not
+     in here uses startsCollapsed() to decide. */
+  const [openCards, setOpenCards] = useState({});
+  const toggleCard = (id) => setOpenCards((o) => ({ ...o, [id]: !o[id] }));
   const summaryMarkedRef = useRef(false); // one summary flag per participant
 
   const [profile, setProfile] = useState({
@@ -2661,6 +2735,18 @@ export default function FamilyCancerRiskAssistant() {
     return out;
   }, [relatives, genetics, profile]);
 
+  /* Highest priority first. Sort is stable, so cards at the same rank keep
+     their clinical order. Nothing is filtered out. */
+  const orderedResults = useMemo(
+    () => [...results].sort((a, b) => displayRank(a, symptoms) - displayRank(b, symptoms)),
+    [results, symptoms]
+  );
+
+  /* The most urgent thing on the page, used to colour the summary action so
+     the call to action matches what the reader actually found. */
+  const topRank = orderedResults.length ? displayRank(orderedResults[0], symptoms) : 5;
+  const urgency = topRank === 0 ? "urgent" : topRank === 1 ? "high" : "routine";
+
   const cancerMeta = (id) => CANCER_CHOICES.find((c) => c.id === id) ||
     { emoji: "🩺", label: L(id, id) };
 
@@ -2670,7 +2756,7 @@ export default function FamilyCancerRiskAssistant() {
     // A new check is a new participant: clear the code, the local identifiers
     // and the submission guard so the next person is never merged with this one.
     setConsent(null); setShowConsent(false); setParticipantCode("");
-    setPatientId({ name: "", ic: "" }); setSubmitState(null);
+    setPatientId({ name: "", ic: "" }); setSubmitState(null); setOpenCards({});
     summaryMarkedRef.current = false;
     submittedRef.current = false;
   };
@@ -3153,18 +3239,32 @@ export default function FamilyCancerRiskAssistant() {
               onEmergency={() => setShowEmg(true)}
             />
 
-            {results.map((res) => {
+            {orderedResults.map((res) => {
               const meta = cancerMeta(res.id);
               const r = RISK[res.level];
               const symHits = (SYMPTOMS[res.id] || []).filter((it) => symptoms[it.id]);
+              const open = openCards[res.id] !== undefined
+                ? openCards[res.id]
+                : !startsCollapsed(res, symptoms);
               return (
-                <div className={"result tone-" + r.tone} key={res.id}>
-                  <div className="head">
+                <div className={"result tone-" + r.tone + (open ? "" : " folded")} key={res.id}>
+                  <button className="head" onClick={() => toggleCard(res.id)}
+                    aria-expanded={open}
+                    aria-label={`${tr(meta.label)} — ${tr(r.label)}`}>
                     <span className="em">{meta.emoji}</span>
                     <span className="nm">{tr(meta.label)}</span>
                     <span className="badge">{tr(r.label)}</span>
-                  </div>
-                  <div className="body">
+                    <span className="chev">{open ? "▴" : "▾"}</span>
+                  </button>
+                  {!open && (
+                    <button className="foldnote" onClick={() => toggleCard(res.id)}>
+                      {tr(L(
+                        "Nothing here needs action right now — tap to see the routine advice.",
+                        "Tiada apa di sini memerlukan tindakan sekarang — tekan untuk nasihat rutin."
+                      ))}
+                    </button>
+                  )}
+                  <div className="body" hidden={!open}>
                     {symHits.length > 0 && (
                       <div className="urgent-strip">
                         <b>⚠ {tr(L("You reported a warning sign for this — please see your nearest doctor and mention it.", "Anda melaporkan tanda amaran untuk ini — sila jumpa doktor berdekatan dan nyatakannya."))}</b>
@@ -3215,6 +3315,7 @@ export default function FamilyCancerRiskAssistant() {
               participantCode={participantCode}
               lang={lang}
               submitState={submitState}
+              urgency={urgency}
               onGenerate={() => {
                 setShowSummary(true);
                 /* Producing the clinic sheet is the study's "did they act?"
