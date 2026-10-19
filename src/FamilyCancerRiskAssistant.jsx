@@ -2542,7 +2542,13 @@ function ConsentGate({ lang, onAccept, onDecline }) {
 
         <p className="gate-p small" style={{ marginBottom: 10 }}>
           {tr(L("Kept for", "Disimpan selama"))}: <b>{ETHICS.retentionYears} {tr(L("years", "tahun"))}</b>
-          {ETHICS.contactEmail ? <> · {tr(L("Contact", "Hubungi"))}: <b>{ETHICS.contactEmail}</b></> : null}
+          {ETHICS.contactEmails.length ? (
+            <> · {tr(L("Contact", "Hubungi"))}:{" "}
+              {ETHICS.contactEmails.map((e, i) => (
+                <span key={e}>{i > 0 ? " · " : ""}<b>{e}</b></span>
+              ))}
+            </>
+          ) : null}
           {approvalKnown
             ? <> · {tr(L("Approval", "Kelulusan"))}: <b>{[ETHICS.nmrrId, ETHICS.mrecRef].filter(Boolean).join(" · ")}</b></>
             : null}

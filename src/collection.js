@@ -53,7 +53,14 @@ export const ETHICS = {
   nmrrId: import.meta.env?.VITE_NMRR_ID || "",
   mrecRef: import.meta.env?.VITE_MREC_REF || "",
   controller: import.meta.env?.VITE_DATA_CONTROLLER || "Institut Kanser Negara (IKN), Kementerian Kesihatan Malaysia",
-  contactEmail: import.meta.env?.VITE_DATA_CONTACT || "",
+  /* The withdrawal route the consent screen promises. A participant quoting
+     their code here is the ONLY way a record can be found and removed, so more
+     than one address is worth having — a single unmonitored inbox would make
+     the promise hollow. Comma-separated in VITE_DATA_CONTACT; the default is
+     the study's clinical owner, official address first. */
+  contactEmails: (import.meta.env?.VITE_DATA_CONTACT ||
+    "amiera.asli@moh.gov.my, nurulamieraasli@gmail.com")
+    .split(",").map((e) => e.trim()).filter(Boolean),
   retentionYears: Number(import.meta.env?.VITE_RETENTION_YEARS || 7),
 };
 

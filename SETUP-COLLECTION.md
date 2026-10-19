@@ -299,7 +299,7 @@ For each row in the table below:
 | `SHEETS_TAB_NAME` | `Submissions` |
 | `VITE_COLLECT_ENABLED` | `true` |
 | `VITE_NMRR_ID` | your NMRR number, once approved |
-| `VITE_DATA_CONTACT` | a monitored email — this is the withdrawal route |
+| `VITE_DATA_CONTACT` | the withdrawal route. One or more monitored addresses, comma-separated. Defaults to the study's clinical owner if unset |
 
 ### 5c. Redeploy — this is not optional
 
@@ -413,7 +413,7 @@ nothing new to create. In Vercel, set:
 
 | Key | Value |
 |---|---|
-| `RESEARCH_TO_EMAIL` | where records should go, e.g. `ppnaim@moh.gov.my` |
+| `RESEARCH_TO_EMAIL` | where records should go, e.g. `amiera.asli@moh.gov.my` |
 
 plus `COLLECTION_ENABLED`, `VITE_COLLECT_ENABLED`, `VITE_NMRR_ID` and
 `VITE_DATA_CONTACT`, and leave all the Google and Apps Script variables unset.
