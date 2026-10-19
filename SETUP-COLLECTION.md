@@ -299,7 +299,12 @@ For each row in the table below:
 | `SHEETS_TAB_NAME` | `Submissions` |
 | `VITE_COLLECT_ENABLED` | `true` |
 | `VITE_NMRR_ID` | your NMRR number, once approved |
-| `VITE_DATA_CONTACT` | the withdrawal route. One or more monitored addresses, comma-separated. Defaults to the study's clinical owner if unset |
+
+> The withdrawal contact is **not** an environment variable. It lives in
+> `src/collection.js`. An earlier version read it from `VITE_DATA_CONTACT`, and
+> a stale value left in Vercel silently overrode the corrected code. **If
+> `VITE_DATA_CONTACT` is still set in your project, delete it** — it now does
+> nothing, but leaving it invites the same confusion later.
 
 ### 5c. Redeploy — this is not optional
 
@@ -390,7 +395,7 @@ variables, set these two:
 | `APPS_SCRIPT_SECRET` | the same random string you put in `SECRET` |
 
 Plus `COLLECTION_ENABLED`, `VITE_COLLECT_ENABLED`, `VITE_NMRR_ID` and
-`VITE_DATA_CONTACT` as in step 5. Then redeploy.
+`VITE_NMRR_ID` as in step 5. Then redeploy.
 
 > **On "Who has access: Anyone":** this means anyone holding the URL can POST to
 > it, which is why the secret exists — a request without it is rejected and
@@ -416,7 +421,7 @@ nothing new to create. In Vercel, set:
 | `RESEARCH_TO_EMAIL` | where records should go, e.g. `amiera.asli@moh.gov.my` |
 
 plus `COLLECTION_ENABLED`, `VITE_COLLECT_ENABLED`, `VITE_NMRR_ID` and
-`VITE_DATA_CONTACT`, and leave all the Google and Apps Script variables unset.
+`VITE_NMRR_ID`, and leave all the Google and Apps Script variables unset.
 Then redeploy.
 
 ### What arrives, and what to do with it

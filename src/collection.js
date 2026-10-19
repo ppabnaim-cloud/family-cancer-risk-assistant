@@ -54,13 +54,20 @@ export const ETHICS = {
   mrecRef: import.meta.env?.VITE_MREC_REF || "",
   controller: import.meta.env?.VITE_DATA_CONTROLLER || "Institut Kanser Negara (IKN), Kementerian Kesihatan Malaysia",
   /* The withdrawal route the consent screen promises. A participant quoting
-     their code here is the ONLY way a record can be found and removed, so more
-     than one address is worth having — a single unmonitored inbox would make
-     the promise hollow. Comma-separated in VITE_DATA_CONTACT; the default is
-     the study's clinical owner, official address first. */
-  contactEmails: (import.meta.env?.VITE_DATA_CONTACT ||
-    "amiera.asli@moh.gov.my, nurulamieraasli@gmail.com")
-    .split(",").map((e) => e.trim()).filter(Boolean),
+     their code here is the ONLY way a record can be found and removed, so a
+     single unmonitored inbox would make the promise hollow — hence two, the
+     official address first.
+
+     Deliberately NOT read from an environment variable. It was, and a stale
+     VITE_DATA_CONTACT left in Vercel silently overrode it, so the consent
+     screen kept showing the wrong contact after the code was corrected. For a
+     value this study-specific and this consequential, one source of truth in
+     the repository beats a setting that can drift unseen in a dashboard.
+     Changing it is a code change, which is the right weight for it. */
+  contactEmails: [
+    "amiera.asli@moh.gov.my",
+    "nurulamieraasli@gmail.com",
+  ],
   retentionYears: Number(import.meta.env?.VITE_RETENTION_YEARS || 7),
 };
 
